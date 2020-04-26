@@ -27,12 +27,12 @@
   <div id="gameScreen" style="display: none;">
     <!-- Add a player turn display -->
     <!-- Add a turn history tracker -->
-    <canvas id="ctx" width="500" height="500" style="border:2px solid #000000;"></canvas>    
-    <br>
-    <div id="chat" style="width:500px;height:100px;overflow-y:scroll">
+    <canvas id="ctx" width="500" height="500" style="border:2px solid #000000; float:left;"></canvas>    
+
+    <div id="chat" style="width:500px;height:500px;overflow-y:scroll; float:left; padding-left: 10px;">
     </div>
     <br>
-    <form action="result.php" method="post" id="handSelection" style="vertical-align: top;">
+    <form action="result.php" method="post" id="handSelection" style="vertical-align: top; clear:both">
       <select name="category" id="handTypeSelector" style="vertical-align: top;">
         <option value="highCard">High Card</option>
         <option value="pair">Pair</option>
