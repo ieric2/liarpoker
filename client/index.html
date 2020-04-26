@@ -123,9 +123,8 @@
         ctx.font = '24px Arial';
 
         cards = data.cards;
-        console.log(cards);
         for (var i = 0; i < cards.length; i++){
-          console.log(cards[i]);
+          ctx.fillText(cards[i], 0, 25 + i * 25);
         }
 
         playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
