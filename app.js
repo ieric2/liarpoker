@@ -156,6 +156,10 @@ io.sockets.on('connection', function(socket){
     joinGame(socket);
   });
 
+  socket.on("setName", function(data){
+    playerList[socket.id].setName(data);
+  })
+
   socket.on('startGame', function(){
     startGame(socket);
   });
