@@ -53,12 +53,14 @@ function joinGame(socket){
   console.log("my name is: " + playerList[socket.id].name);
 }
 
-function drawCards(id){
-  for (var i = 0; i < playerArray.length; i++){
-    card = freeCards[Math.floor(Math.random() * freeCards.length)];
-    playerList[id].cards.push(card);
-    freeCards.splice(freeCards.indexOf(card), 1);
-    usedCards.push(card);
+function drawCards(){
+  for (i in playerList){
+    for (var n = 0; n < playerList[i].lives; n++){
+      card = freeCards[Math.floor(Math.random() * freeCards.length)];
+      playerList[i].cards.push(card);
+      freeCards.splice(freeCards.indexOf(card), 1);
+      usedCards.push(card);
+    }
   }
 }
 
@@ -86,6 +88,8 @@ function checkHandIncreases(data){
   prevHandSubtype2 = prevHand[3];
 
   handType = data[0];
+  console.log(handType);
+  console.log(prevHandType);
   if (handType < prevHandType){
     return false;
   }
@@ -109,8 +113,8 @@ function checkHandIncreases(data){
       case 3: //triple
         return prevHandSubtype < data[1];
       case 2: //twoPair
-        return  (Math.max(prevHandSubtype, prevHandType2) < Math.max(data[1], data[2])) || 
-                (Math.max(prevHandSubtype, prevHandType2) == Math.max(data[1], data[2]) && Math.min(prevHandSubtype, prevHandType2) < Math.min(data[1], data[2]));
+        return  (Math.max(prevHandSubtype, prevHandSubtype2) < Math.max(data[1], data[2])) || 
+                (Math.max(prevHandSubtype, prevHandSubtype2) == Math.max(data[1], data[2]) && Math.min(prevHandSubtype, prevHandSubtype2) < Math.min(data[1], data[2]));
       case 1: //pair
         return prevHandSubtype < data[1];
       case 0: //highCard
@@ -158,11 +162,12 @@ io.sockets.on('connection', function(socket){
         joinGame(socketList[i]);
       }
     }
-    drawCards(socket.id);
+    drawCards();
 
     playerTurn = Math.floor(Math.random() * playerArray.length);
 
     for(i in socketList){
+      console.log(playerList[i].cards);
       socketList[i].emit('gameStarting', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name});
     }
     console.log(playerArray);
@@ -176,75 +181,80 @@ io.sockets.on('connection', function(socket){
     if (socket.id == playerArray[playerTurn]){
       console.log("turn played");
       console.log("hand: "+ data[0] + data[1] + data[2]);
-      if (turnList.length == 0 || checkHandIncreases(data)){
-        switch(data[0]){
-          case "royalFlush":
-            message = playerList[socket.id].name + " played a ROYAL FLUSH";
-            data[0] = 9;
-            break;
-          case "straightFlush":
-            message = playerList[socket.id].name + " played a " + data[2] + " high " + data[1] + " STRAIGHT FLUSH";
-            data[0] = 8;
-            data[2] = convertCardValue(data[2]);
-            break;
-          case "quad":
-            message = playerList[socket.id].name + " played FOUR " + data[1] + "'s";
-            data[0] = 7;
-            data[2] = convertCardValue(data[1]);
-            break;
-          case "fullHouse":
-            message = playerList[socket.id].name + " played " + data[1] + "'s FULL of " + data[2] + "'s";
-            data[0] = 6;
-            data[1] = convertCardValue(data[1]);
-            data[2] = convertCardValue(data[2]);
-            if (data[1] == data[2]){
-              console.log("can't flush same card");
-              return;
-            }
-            break;
-          case "flush":
-            message = playerList[socket.id].name + " played a " + data[1] + " FLUSH";
-            data[0] = 5;
-            break;
-          case "straight":
-            message = playerList[socket.id].name + " played a " + data[1] + " high STRAIGHT";
-            data[0] = 4;
-            data[1] = convertCardValue(data[1]);
-            break;
-          case "triple":
-            message = playerList[socket.id].name + " played THREE " + data[1] + "'s";
-            data[0] = 3;
-            data[1] = convertCardValue(data[1]);
-            break;
-          case "twoPair":
-            message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s and a PAIR of " + data[2] + "'s";
-            data[0] = 2;
-            data[1] = convertCardValue(data[1]);
-            data[2] = convertCardValue(data[2]);
-            if (data[1] == data[2]){
-              console.log("can't two pair same card");
-              return;
-            }
-            break;
-          case "pair":
-            message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s";
-            data[0] = 1;
-            data[1] = convertCardValue(data[1]);
-            break;
-          case "highCard":        
-            message = playerList[socket.id].name + " played HIGH CARD " + data[1];
-            data[0] = 0;
-            data[1] = convertCardValue(data[1]);
-            break;
+      error = false;
+      
+      switch(data[0]){
+        case "royalFlush":
+          message = playerList[socket.id].name + " played a ROYAL FLUSH";
+          data[0] = 9;
+          break;
+        case "straightFlush":
+          message = playerList[socket.id].name + " played a " + data[2] + " high " + data[1] + " STRAIGHT FLUSH";
+          data[0] = 8;
+          data[2] = convertCardValue(data[2]);
+          break;
+        case "quad":
+          message = playerList[socket.id].name + " played FOUR " + data[1] + "'s";
+          data[0] = 7;
+          data[2] = convertCardValue(data[1]);
+          break;
+        case "fullHouse":
+          message = playerList[socket.id].name + " played " + data[1] + "'s FULL of " + data[2] + "'s";
+          data[0] = 6;
+          data[1] = convertCardValue(data[1]);
+          data[2] = convertCardValue(data[2]);
+          if (data[1] == data[2]){
+            socket.emit("addToChat", "<b> can't pick fullhouse with same two values <b>");
+            error = true;
+          }
+          break;
+        case "flush":
+          message = playerList[socket.id].name + " played a " + data[1] + " FLUSH";
+          data[0] = 5;
+          break;
+        case "straight":
+          message = playerList[socket.id].name + " played a " + data[1] + " high STRAIGHT";
+          data[0] = 4;
+          data[1] = convertCardValue(data[1]);
+          break;
+        case "triple":
+          message = playerList[socket.id].name + " played THREE " + data[1] + "'s";
+          data[0] = 3;
+          data[1] = convertCardValue(data[1]);
+          break;
+        case "twoPair":
+          message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s and a PAIR of " + data[2] + "'s";
+          data[0] = 2;
+          data[1] = convertCardValue(data[1]);
+          data[2] = convertCardValue(data[2]);
+          if (data[1] == data[2]){
+            socket.emit("addToChat", " <b> can't pick two pair with same two values <b>");
+            error = true;              
+          }
+          break;
+        case "pair":
+          message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s";
+          data[0] = 1;
+          data[1] = convertCardValue(data[1]);
+          break;
+        case "highCard":        
+          message = playerList[socket.id].name + " played HIGH CARD " + data[1];
+          data[0] = 0;
+          data[1] = convertCardValue(data[1]);
+          break;
         }
-    
+
+      if(!error && (turnList.length == 0 || checkHandIncreases(data))){
         turnList.push([playerList[socket.id].name, data[0], data[1], data[2], message]);
-    
+  
         io.emit("addToChat", '<i>' + message + '</i>');
     
         playerTurn = ++playerTurn % playerArray.length;
     
         io.emit("updateGame", {newPlayerTurn: playerList[playerArray[playerTurn]].name, pastMove: turnList[turnList.length - 1][4]})
+      }
+      else{
+        socket.emit("addToChat", "<b> please select a higher hand <b>")
       }
     }  
   });
