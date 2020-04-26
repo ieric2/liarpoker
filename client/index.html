@@ -27,30 +27,26 @@
   <div id="gameScreen" style="display: none;">
     <canvas id="ctx" width="500" height="500" style="border:2px solid #000000;"></canvas>    
     <br>
-    <form action="result.php" method="post" id="demoForm" class="demoForm">
+    <form action="result.php" method="post" id="handSelection" style="vertical-align: top;">
       <select name="category">
-        <option value="royalFlush">Royal Flush</option>
-        <option value="straightFlush">Straight Flush</option> 
-        <option value="quad">Four of a Kind</option>
-        <option value="fullHouse">Full House</option> 
-        <option value="flush">Flush</option>
-        <option value="straight">Straight</option> 
-        <option value="triple">Three of a Kind</option> 
-        <option value="twoPair">Flush</option> 
-        <option value="pair">Pair</option>
         <option value="highCard">High Card</option>
+        <option value="pair">Pair</option>
+        <option value="twoPair">Two Pair</option> 
+        <option value="triple">Three of a Kind</option> 
+        <option value="straight">Straight</option> 
+        <option value="flush">Flush</option>
+        <option value="fullHouse">Full House</option> 
+        <option value="quad">Four of a Kind</option>
+        <option value="straightFlush">Straight Flush</option> 
+        <option value="royalFlush">Royal Flush</option>
       </select>
-      
-      <select name="choices[]" id="choices" size="4">
+      <select name="choices[]" id="choices" size="4" style="min-width: 100px;">
           <!-- js populates -->
       </select>
-
-      <select name="choices[]" id="choices2" size="4">
+      <select name="choices2[]" id="choices2" size="4" style="min-width: 100px;">
         <!-- js populates -->
-      </select>
-      
+    </select>
       <p><input type="submit" value="Submit" /></p>
-      
     </form>
     <br>
     <button type="button" onclick="castDoubt()">Cast Doubt</button>
@@ -96,10 +92,11 @@
     function castDoubt(){
 
     }
+  </script>
 
 
 
-
+  <script type="text/javascript">
     function removeAllOptions(sel, removeGrp) {
       var len, groups, par;
       if (removeGrp) {
@@ -155,13 +152,20 @@
     }
 
     // anonymous function assigned to onchange event of controlling select list
-    document.forms['demoForm'].elements['category'].onchange = function(e) {
+    document.forms['handSelection'].elements['category'].onchange = function(e) {
       var relName = 'choices[]';
-      var relList = this.form.elements[ relName ];
+      var relList = this.form.elements[relName];
       var obj = Select_List_Data[ relName ][ this.value ];
 
       removeAllOptions(relList, true);
       appendDataToSelect(relList, obj);
+
+      var relName2 = 'choices2[]';
+      var relList2 = this.form.elements[relName2];
+      var obj2 = Select_List_Data[ relName2 ][ this.value ];
+
+      removeAllOptions(relList2, true);
+      appendDataToSelect(relList2, obj2);
     };
 
     var Select_List_Data = {
@@ -196,29 +200,65 @@
         highCard:{
           text: ["2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"]
         }
+      },
+      'choices2[]': {
+        royalFlush: {
+          text: []
+        },
+        straightFlush: {
+          text: ["2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"]
+        },
+        quad:{
+          text: []
+        },
+        fullHouse:{
+          text: ["2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"]
+        },
+        flush: {
+          text: []
+        },
+        straight: {
+          text: []
+        },
+        triple:{
+          text: []
+        },
+        twoPair:{
+          text: ["2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"]
+        },
+        pair:{
+          text: []
+        },
+        highCard:{
+          text: []
+        }
       }
         
     };
 
     // populate associated select list when page loads
     window.onload = function() {
-      var form = document.forms['demoForm'];
+      var form = document.forms['handSelection'];
       
       // reference to controlling select list
       var sel = form.elements['category'];
       sel.selectedIndex = 0;
+
+      var sel2 = form.elements['category'];
+      sel2.selectedIndex = 1;
       
-      // name of associated select list
       var relName = 'choices[]';
-      // reference to associated select list
       var rel = form.elements[ relName ];
-      
-      // get data for associated select list passing its name
-      // and value of selected in controlling select list
       var data = Select_List_Data[ relName ][ sel.value ];
+
+      var relName2 = 'choices2[]';
+      var rel2 = form.elements[ relName2 ];
+      var data2= Select_List_Data[ relName2 ][ sel.value ];
       
       // add options to associated select list
       appendDataToSelect(rel, data);
+      appendDataToSelect(rel2, data2);
+
     };
   </script>
   
