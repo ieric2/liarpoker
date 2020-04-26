@@ -126,6 +126,9 @@
         for (var i = 0; i < cards.length; i++){
           console.log(cards[i]);
         }
+
+        playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
+
         
         document.getElementById("joinScreen").style.display = "none";
         document.getElementById("waitingScreen").style.display = "none";
@@ -149,10 +152,14 @@
 
     chatForm.onsubmit = function(e){
       e.preventDefault();
+      console.log(chatInput.value);
       socket.emit('chat', chatInput.value);
     }
 
   </script>
+
+
+
 
 
   <script>
@@ -245,7 +252,7 @@
           text: ["Heart", "Spade", "Diamond", "Club"]
         },
         straight: {
-          text: ["A - 5", "2 - 6", "3 - 7", "4 - 8", "5 - 9", "6 - 10", "7 - J", "8 - Q", "9 - K", "10 - A"]
+          text: ["5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
         },
         triple:{
           text: ["2", "3", "4", "5", "6", "7", "8", "9", "J", "Q", "K", "A"]
@@ -265,7 +272,7 @@
           text: []
         },
         straightFlush: {
-          text: ["A-5", "2-6", "3-7", "4-8", "5-9", "6-10", "7-J", "8-Q", "9-K", "10-A"]
+          text: ["5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
         },
         quad:{
           text: []
