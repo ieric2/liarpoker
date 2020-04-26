@@ -47,7 +47,7 @@
         <!-- js populates -->
       </select>
       <p></p>
-      <button type="button" onclick="submitHand()">Submit Hand</button>
+      <button type="button" onclick="playTurn()">Submit Hand</button>
       <button type="button" onclick="castDoubt()">Cast Doubt</button>
 
     </form>
@@ -85,11 +85,11 @@
     });
 
 
-    function submitHand(){
-      var handType = document.getElementById("handTypeSelector").value
-      var handVariant = document.getElementById("handSubtypeSelector").value
-      var handVariant2 = document.getElementById("handSubtype2Selector").value
-      console.log(handType + handVariant + handVariant2);
+    function playTurn(){
+      var handType = document.getElementById("handTypeSelector").value;
+      var handVariant = document.getElementById("handSubtypeSelector").value;
+      var handVariant2 = document.getElementById("handSubtype2Selector").value;
+      socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2});
     }
 
     function castDoubt(){

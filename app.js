@@ -77,10 +77,12 @@ function drawCards(id){
   }
 }
 
-function playTurn(socket){
+function playTurn(socket, data){
   console.log("turn for: " + playerTurn);
   if (socket.id == playerTurn){
     console.log("turn played");
+    console.log(data[0] + data[1] + data[2]);
+
   }
   else{
     return -1;
@@ -99,9 +101,10 @@ io.sockets.on('connection', function(socket){
     startGame(socket);
   });
 
-  socket.on('playTurn', function(){
-    playTurn(socket);
+  socket.on('playTurn', function(data){
+    playTurn(socket, data);
   });
+
 
 
   socket.on('disconnect', function(){
