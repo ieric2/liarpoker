@@ -28,7 +28,7 @@
     <canvas id="ctx" width="500" height="500" style="border:2px solid #000000;"></canvas>    
     <br>
     <form action="result.php" method="post" id="handSelection" style="vertical-align: top;">
-      <select name="category">
+      <select name="category" id="handTypeSelector" style="vertical-align: top;">
         <option value="highCard">High Card</option>
         <option value="pair">Pair</option>
         <option value="twoPair">Two Pair</option> 
@@ -40,17 +40,17 @@
         <option value="straightFlush">Straight Flush</option> 
         <option value="royalFlush">Royal Flush</option>
       </select>
-      <select name="choices[]" id="choices" size="4" style="min-width: 100px;">
+      <select name="choices[]" id="handSubtypeSelector" size="4" style="min-width: 100px;">
           <!-- js populates -->
       </select>
-      <select name="choices2[]" id="choices2" size="4" style="min-width: 100px;">
+      <select name="choices2[]" id="handSubtype2Selector" size="4" style="min-width: 100px;">
         <!-- js populates -->
-    </select>
-      <p><input type="submit" value="Submit" /></p>
+      </select>
+      <p></p>
+      <button type="button" onclick="submitHand()">Submit Hand</button>
+      <button type="button" onclick="castDoubt()">Cast Doubt</button>
+
     </form>
-    <br>
-    <button type="button" onclick="castDoubt()">Cast Doubt</button>
-    <button type="button" onclick="endTurn()">End Turn</button>
   </div>
 
 
@@ -85,8 +85,11 @@
     });
 
 
-    function endTurn(){
-
+    function submitHand(){
+      var handType = document.getElementById("handTypeSelector").value
+      var handVariant = document.getElementById("handSubtypeSelector").value
+      var handVariant2 = document.getElementById("handSubtype2Selector").value
+      console.log(handType + handVariant + handVariant2);
     }
 
     function castDoubt(){
@@ -96,7 +99,7 @@
 
 
 
-  <script type="text/javascript">
+  <script>
     function removeAllOptions(sel, removeGrp) {
       var len, groups, par;
       if (removeGrp) {
@@ -245,7 +248,7 @@
       sel.selectedIndex = 0;
 
       var sel2 = form.elements['category'];
-      sel2.selectedIndex = 1;
+      sel2.selectedIndex = 0;
       
       var relName = 'choices[]';
       var rel = form.elements[ relName ];
