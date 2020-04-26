@@ -61,6 +61,7 @@ function onDisconnect(socket){
 
 function startGame(socket){
   drawCards(socket.id);
+  playerTurn = Object.keys(playerList)[Math.floor(Math.random() * playerCount)];
   for(i in socketList){
     socketList[i].emit('gameStarting', {cards: playerList[i].cards});
   }
@@ -76,6 +77,16 @@ function drawCards(id){
   }
 }
 
+function playTurn(socket){
+  console.log("turn for: " + playerTurn);
+  if (socket.id == playerTurn){
+    console.log("turn played");
+  }
+  else{
+    return -1;
+  }
+}
+
 var io = require('socket.io')(serv, {});
 io.sockets.on('connection', function(socket){
   console.log("client connection");
@@ -86,6 +97,10 @@ io.sockets.on('connection', function(socket){
 
   socket.on('startGame', function(){
     startGame(socket);
+  });
+
+  socket.on('playTurn', function(){
+    playTurn(socket);
   });
 
 
