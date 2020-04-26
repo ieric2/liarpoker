@@ -25,6 +25,8 @@
   </div>
 
   <div id="gameScreen" style="display: none;">
+    <!-- Add a player turn display -->
+    <!-- Add a turn history tracker -->
     <canvas id="ctx" width="500" height="500" style="border:2px solid #000000;"></canvas>    
     <br>
     <form action="result.php" method="post" id="handSelection" style="vertical-align: top;">
@@ -49,7 +51,6 @@
       <p></p>
       <button type="button" onclick="playTurn()">Submit Hand</button>
       <button type="button" onclick="castDoubt()">Cast Doubt</button>
-
     </form>
   </div>
 
@@ -96,7 +97,6 @@
 
     }
   </script>
-
 
 
   <script>
