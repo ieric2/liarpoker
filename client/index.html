@@ -1,0 +1,82 @@
+<html>
+
+<head>
+  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+</head>
+
+
+<body>
+  <div id="joinScreen"> 
+    WELCOME TO LIARS POKER
+  <input type="button" name="joinGameButton" value="Join Game" onclick="joinGame()"/>
+  </div>
+
+  <div id="waitingScreen" style="display: none;">
+    <text>
+      Waiting to start game... 
+    </text>
+    <br><br>
+    <form>
+      <input type="text" name="setName">
+      <input type="submit" value="Set Name">
+    </form>
+    <br><br>
+    <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
+  </div>
+
+  <div id="gameScreen" style="display: none;">
+    <canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>    
+    <br>
+    <button type="button" onclick="castDoubt()">Cast Doubt</button>
+    <button type="button" onclick="endTurn()">End Turn</button>
+  </div>
+
+
+  <script>
+
+    var socket = io()
+
+    var cards = {}
+
+
+    function joinGame(){
+      document.getElementById("joinScreen").style.display = "none";
+      document.getElementById("waitingScreen").style.display = "block";
+    }
+
+    function startGame(){
+      socket.emit('startGame');
+    }
+
+    socket.on('gameStarting', function(data){
+        const ctx = document.getElementById("ctx").getContext("2d");
+        ctx.font = '24px Arial';
+
+        cards = data.cards;
+        for (var i = 0; i < cards.length; i++){
+          console.log(cards[i]);
+        }
+        
+        document.getElementById("joinScreen").style.display = "none";
+        document.getElementById("waitingScreen").style.display = "none";
+        document.getElementById("gameScreen").style.display = "block";
+    });
+
+
+    function endTurn(){
+
+    }
+
+    function castDoubt(){
+
+    }
+
+
+
+  </script>
+  
+</body>
+
+
+
+</html>
