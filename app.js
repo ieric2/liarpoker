@@ -45,35 +45,6 @@ class Player{
   }
 }
 
-function onConnect(socket){
-  socketList[socket.id] = socket;
-}
-
-function joinGame(socket){
-  playerCount++;
-  playerList[socket.id] = new Player(socket.id);
-  playerList[socket.id].setName(socket.id);
-  playerArray.push(socket.id);
-  io.emit("addToChat", socket.id + " has joined the game");
-  console.log("the number of players is: " + playerCount);
-  console.log("my name is: " + playerList[socket.id].name);
-}
-
-function onDisconnect(socket){
-  delete socketList[socket.id];
-  delete playerList[socket.id];
-  playerCount--;
-}
-
-function startGame(socket){
-  drawCards(socket.id);
-  playerTurn = Object.keys(playerList)[Math.floor(Math.random() * playerCount)];
-  for(i in socketList){
-    socketList[i].emit('gameStarting', {cards: playerList[i].cards});
-  }
-  console.log("game Starting");
-}
-
 function drawCards(id){
   for (var i = 0; i < playerCount; i++){
     card = freeCards[Math.floor(Math.random() * freeCards.length)];
@@ -83,50 +54,6 @@ function drawCards(id){
   }
 }
 
-function playTurn(socket, data){
-  console.log("turn for: " + playerTurn);
-  if (socket.id == playerTurn){
-    console.log("turn played");
-    console.log("hand: "+ data[0] + data[1] + data[2]);
-    switch(data[0]){
-      case "royalFlush":
-        message = playerList[socket.id].name + " played a ROYAL FLUSH"; 
-        break;
-      case "straightFlush":
-        message = playerList[socket.id].name + " played a " + data[2] + " " + data[1] + " STRAIGHT FLUSH";
-        break;
-      case "quad":
-        message = playerList[socket.id].name + " played FOUR " + data[1] + "'s";
-        break;
-      case "fullHouse":
-        message = playerList[socket.id].name + " played " + data[1] + "'s FULL of " + data[2] + "'s";
-        break;
-      case "flush":
-        message = playerList[socket.id].name + " played a " + data[1] + " FLUSH";
-        break;
-      case "straight":
-        message = playerList[socket.id].name + " played a " + data[1] + " STRAIGHT";
-        break;
-      case "triple":
-        message = playerList[socket.id].name + " played THREE " + data[1] + "'s";
-        break;
-      case "twoPair":
-        message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s and a PAIR of " + data[2] + "'s";
-        break;
-      case "pair":
-        message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s";
-        break;
-      case "highCard":        
-        message = playerList[socket.id].name + " played HIGH CARD " + data[1];
-        break;
-    }
-
-    turnList.push([playerList[socket.id].name, data[0], data[1], data[2], message]);
-
-    io.emit("addToChat", message);
-
-  }
-}
 
 function checkHand(socket, data){
   turn = turnList.pop();
@@ -149,23 +76,80 @@ io.sockets.on('connection', function(socket){
   console.log("client connection");
   console.log(socket.id);
 
-
-  onConnect(socket);
+  socketList[socket.id] = socket;
 
   socket.on("joinGame", function(){
-    joinGame(socket);
+    playerCount++;
+    playerList[socket.id] = new Player(socket.id);
+    playerList[socket.id].setName(socket.id);
+    playerArray.push(socket.id);
+    io.emit("addToChat", socket.id + " has joined the game");
+    console.log("the number of players is: " + playerCount);
+    console.log("my name is: " + playerList[socket.id].name);
   });
 
   socket.on("setName", function(data){
     playerList[socket.id].setName(data);
-  })
+  });
 
   socket.on('startGame', function(){
-    startGame(socket);
+    drawCards(socket.id);
+    playerTurn = Math.floor(Math.random() * playerCount);
+    for(i in socketList){
+      socketList[i].emit('gameStarting', {cards: playerList[i].cards});
+    }
+    console.log("game Starting");  
   });
 
   socket.on('playTurn', function(data){
-    playTurn(socket, data);
+    console.log(playerTurn);
+
+    console.log("turn for: " + playerList[playerArray[playerTurn]].name);
+    if (socket.id == playerArray[playerTurn]){
+      console.log("turn played");
+      console.log("hand: "+ data[0] + data[1] + data[2]);
+      switch(data[0]){
+        case "royalFlush":
+          message = playerList[socket.id].name + " played a ROYAL FLUSH"; 
+          break;
+        case "straightFlush":
+          message = playerList[socket.id].name + " played a " + data[2] + " " + data[1] + " STRAIGHT FLUSH";
+          break;
+        case "quad":
+          message = playerList[socket.id].name + " played FOUR " + data[1] + "'s";
+          break;
+        case "fullHouse":
+          message = playerList[socket.id].name + " played " + data[1] + "'s FULL of " + data[2] + "'s";
+          break;
+        case "flush":
+          message = playerList[socket.id].name + " played a " + data[1] + " FLUSH";
+          break;
+        case "straight":
+          message = playerList[socket.id].name + " played a " + data[1] + " STRAIGHT";
+          break;
+        case "triple":
+          message = playerList[socket.id].name + " played THREE " + data[1] + "'s";
+          break;
+        case "twoPair":
+          message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s and a PAIR of " + data[2] + "'s";
+          break;
+        case "pair":
+          message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s";
+          break;
+        case "highCard":        
+          message = playerList[socket.id].name + " played HIGH CARD " + data[1];
+          break;
+      }
+  
+      turnList.push([playerList[socket.id].name, data[0], data[1], data[2], message]);
+  
+      io.emit("addToChat", '<i>' + message + '</i>');
+  
+      playerTurn = ++playerTurn % playerCount;
+  
+      io.emit("updateGame", {newPlayerTurn: playerArray[playerTurn], pastMove: turnList[turnList.length - 1][4]})
+  
+    }  
   });
 
   socket.on('checkHand', function(){
@@ -174,9 +158,15 @@ io.sockets.on('connection', function(socket){
 
     io.emit("resolveDoubt", {handValidity: handValidity})
 
+  });
+
+  socket.on('chat', function(data){
+    io.emit('addToChat', socket.id + ": " + data);
   })
 
   socket.on('disconnect', function(){
-    onDisconnect(socket);
+    delete socketList[socket.id];
+    delete playerList[socket.id];
+    playerCount--;
   });
 });

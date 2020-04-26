@@ -30,9 +30,23 @@
   <div id="gameScreen" style="display: none;">
     <!-- Add a player turn display -->
     <!-- Add a turn history tracker -->
+    <text id="playerTurn">
+
+    </text>
     <div class="container" style="display: flex;">
-      <canvas id="ctx"  style="width:50%;height:500px; border:2px solid #000000;"></canvas>   
-      <div id="chat" style="width:50%;height:500px; overflow-y:scroll; padding-left: 10px;">
+      <canvas id="ctx"  style="width:33%;height:500px; border:2px solid #000000;"></canvas> 
+      <div style="width:33%; padding-left: 10px;">
+        <div id="chat" style="height:500px; overflow-y:scroll;">
+        </div>
+        </br>
+        <text>
+          Chat Here:
+        </text>
+        <form id="chatForm">
+          <input id="chatInput" type="text" style="height:30px;width:95%">
+        </form>
+      </div>
+      <div id="moveHistory" style="width:33%;height:500px; overflow-y:scroll; padding-left: 10px;">
       </div>
     </div>
     <br>
@@ -70,7 +84,12 @@
 
     var id = socket.id;
 
-    var chat = document.getElementById("chat");
+    var chatForm = document.getElementById("chatForm");
+    var chatInput = document.getElementById("chatInput");
+
+    var playerTurn = document.getElementById("playerTurn");
+
+    var rmoveHistory = document.getElementById("moveHistory");
 
 
     function joinGame(){
@@ -88,6 +107,17 @@
       socket.emit('startGame');
     }
 
+    function playTurn(){
+      var handType = document.getElementById("handTypeSelector").value;
+      var handVariant = document.getElementById("handSubtypeSelector").value;
+      var handVariant2 = document.getElementById("handSubtype2Selector").value;
+      socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2});
+    }
+
+    function castDoubt(){
+      socket.emit("checkHand");
+    }
+
     socket.on('gameStarting', function(data){
         const ctx = document.getElementById("ctx").getContext("2d");
         ctx.font = '24px Arial';
@@ -102,18 +132,6 @@
         document.getElementById("gameScreen").style.display = "block";
     });
 
-
-    function playTurn(){
-      var handType = document.getElementById("handTypeSelector").value;
-      var handVariant = document.getElementById("handSubtypeSelector").value;
-      var handVariant2 = document.getElementById("handSubtype2Selector").value;
-      socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2});
-    }
-
-    function castDoubt(){
-      socket.emit("checkHand");
-    }
-
     socket.on("resolveDoubt", function(data){
       if(data){
         chat.innerHTML += '<div>' + data.doubter + ' incorrectly doubted ' + data.doubtee + '</div>';
@@ -123,6 +141,16 @@
     socket.on("addToChat", function(data){
       chat.innerHTML += '<div>' + data + '</div>';
     });
+
+    socket.on("updateGame", function(data){
+      playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
+      moveHistory.innerHTML +=  '<div>' + data.pastMove + '</div>';
+    })
+
+    chatForm.onsubmit = function(e){
+      e.preventDefault();
+      socket.emit('chat', chatInput.value);
+    }
 
   </script>
 
