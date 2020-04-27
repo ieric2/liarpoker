@@ -66,19 +66,74 @@ function drawCards(){
 
 
 function checkHand(socket, data){
-  turn = turnList.pop();
-  player = turn[0];
-  handType, handSubtype, handSubtype2 = null;
-  if(turn.length > 1){
-    handType = hand[1];
-  }
-  if (turn.length > 2){
-    handSubtype2 = hand[2];
-  }
-  if (turn.length > 3){
-    handSubtype = hand[3];
+  hand = turnList.pop();
+  player = hand[0];
+  handType = hand[1];
+  handSubtype = hand[2];
+  handSubtype2 = hand[3];
+
+  console.log(usedCards);
+
+  numCounts = {};
+  suitCounts = {};
+  for (var i = 0; i < usedCards.length; i++){
+    numCounts[card.charAt(0)]++;
+    suitCounts[card.charAt(1)]++;
   }
 
+  switch (handType){
+    case 0: //highcard
+    return numCounts[handSubtype] >= 1;
+    case 1:   //pair
+      return numCounts[handSubtype] >= 2;
+    case 2:  //two pair
+      return numCounts[handSubtype] >= 2 && numCounts[handSubtype2] >= 2;
+    case 3:  //trip
+      return numCounts[handSubtype] >= 3;
+    case 4:  //straight
+      orderedKeys = Object.keys(numCounts);
+      startIndex = orderedKeys.indexOf(handSubtype);
+      for (var i = 0; i < 5; i++){
+        if (startIndex - i == -1){
+          if (numCounts['e'] < 1){
+            return false;
+          }
+        }
+        else if (numCounts[orderedKeys[startIndex - i]] < 1){
+          return false;
+        }
+      }
+      return true;
+    case 5:  //flush
+      return suitCounts[handSubtype] >= 5;
+    case 6:  //full house
+      return numCounts[handSubtype] >= 3 && numCounts[handSubtype2] >= 2;
+    case 7:  //quad
+      return numCounts[handSubtype] >= 4;
+    case 8: //straight flush
+      orderedKeys = Object.keys(numCounts);
+      startIndex = orderedKeys.indexOf(handSubtype);
+      for (var i = 0; i < 5; i++){
+        if (startIndex - i == -1){
+          if (numCounts['e'] < 1){
+            return false;
+          }
+        }
+        else if (numCounts[orderedKeys[startIndex - i]] < 1){
+          return false;
+        }
+      }
+      return suitCounts[handSubtype] >= 5;
+    case 9:  //royalFlush
+      orderedKeys = Object.keys(numCounts);
+      startIndex = orderedKeys.indexOf('e');
+      for (var i = 0; i < 5; i++){
+        if (numCounts[orderedKeys[startIndex - i]] < 1){
+          return false;
+        }
+      }
+      return suitCounts[handSubtype] >= 5;
+  }
 }
 
 function checkHandIncreases(data){
@@ -125,14 +180,16 @@ function checkHandIncreases(data){
 
 function convertCardValue(value){
   switch (value){
+    case '10':
+      return 'a'
     case 'J':
-      return 'a';
-    case 'Q':
       return 'b';
-    case 'K':
+    case 'Q':
       return 'c';
-    case 'A':
+    case 'K':
       return 'd';
+    case 'A':
+      return 'e';
     default:
       return value;
   }
@@ -262,8 +319,18 @@ io.sockets.on('connection', function(socket){
   socket.on('checkHand', function(){
     //true if there is that hand
     handValidity = checkHand(socket);
+    doubtValidity = "CORRECTLY";
+    if (handValidity){
+      doubtValidity = "INCORRECTLY";
+      playerList[socket.id].lives--;
+    }
+    else{
+      playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
+    }
 
-    io.emit("resolveDoubt", {handValidity: handValidity})
+    io.emit('addToChat', "<b> " + playerList[socket.id].name + " " + doubtValidity + " doubted " + turnList[turnList.length - 1][0] + "'s hand </b>")
+
+    io.emit("newRound", {handValidity: handValidity})
 
   });
 
