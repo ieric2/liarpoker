@@ -64,6 +64,19 @@ function drawCards(){
   }
 }
 
+function setupRound(){
+  drawCards();
+
+    playerTurn = Math.floor(Math.random() * playerArray.length);
+
+    for(i in socketList){
+      console.log(playerList[i].cards);
+      socketList[i].emit('newRound', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name, lives: playerList[i].lives});
+    }
+    console.log(playerArray);
+    console.log("game Starting");  
+}
+
 
 function checkHand(socket, data){
   hand = turnList.pop();
@@ -77,8 +90,23 @@ function checkHand(socket, data){
   numCounts = {};
   suitCounts = {};
   for (var i = 0; i < usedCards.length; i++){
-    numCounts[card.charAt(0)]++;
-    suitCounts[card.charAt(1)]++;
+    console.log(usedCards[i].charAt(0));
+    num = usedCards[i].charAt(0);
+    suit = usedCards[i].charAt(1);
+
+    if(numCounts[num] == undefined){
+      numCounts[num] = 1;
+    }
+    else{
+      numCounts[num]++;
+    }
+
+    if(suitCounts[suit] == undefined){
+      suitCounts[suit] = 1;
+    }
+    else{
+      suitCounts[suit]++;
+    }
   }
 
   switch (handType){
@@ -93,6 +121,7 @@ function checkHand(socket, data){
     case 4:  //straight
       orderedKeys = Object.keys(numCounts);
       startIndex = orderedKeys.indexOf(handSubtype);
+      console.log(numCounts);
       for (var i = 0; i < 5; i++){
         if (startIndex - i == -1){
           if (numCounts['e'] < 1){
@@ -219,16 +248,9 @@ io.sockets.on('connection', function(socket){
         joinGame(socketList[i]);
       }
     }
-    drawCards();
 
-    playerTurn = Math.floor(Math.random() * playerArray.length);
+    setupRound();
 
-    for(i in socketList){
-      console.log(playerList[i].cards);
-      socketList[i].emit('gameStarting', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name});
-    }
-    console.log(playerArray);
-    console.log("game Starting");  
   });
 
   socket.on('playTurn', function(data){
@@ -319,6 +341,7 @@ io.sockets.on('connection', function(socket){
   socket.on('checkHand', function(){
     //true if there is that hand
     handValidity = checkHand(socket);
+    console.log(handValidity);
     doubtValidity = "CORRECTLY";
     if (handValidity){
       doubtValidity = "INCORRECTLY";
@@ -330,7 +353,8 @@ io.sockets.on('connection', function(socket){
 
     io.emit('addToChat', "<b> " + playerList[socket.id].name + " " + doubtValidity + " doubted " + turnList[turnList.length - 1][0] + "'s hand </b>")
 
-    io.emit("newRound", {handValidity: handValidity})
+    setupRound();
+
 
   });
 

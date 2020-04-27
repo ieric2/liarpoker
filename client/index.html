@@ -23,8 +23,6 @@
       <input type="text" id="setNameField"/>
       <button type="button" onclick="setName()">Set Name</button>
     </form>
-    <br><br>
-    <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
   </div>
 
   <div id="gameScreen" style="display: none;">
@@ -73,23 +71,24 @@
       <button type="button" onclick="playTurn()">Submit Hand</button>
       <button type="button" onclick="castDoubt()">Cast Doubt</button>
     </form>
+    <br><br>
+    <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
   </div>
 
 
   <script>
-
-    var socket = io()
-
     var cards = {}
 
-    var id = socket.id;
+    const socket = io()
+    const id = socket.id;
 
-    var chatForm = document.getElementById("chatForm");
-    var chatInput = document.getElementById("chatInput");
-
-    var playerTurn = document.getElementById("playerTurn");
-
-    var rmoveHistory = document.getElementById("moveHistory");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+    const playerTurn = document.getElementById("playerTurn");
+    const moveHistory = document.getElementById("moveHistory");
+    var canvas = document.getElementById("ctx")
+    var ctx = canvas.getContext("2d");
+    ctx.font = '30px Arial';
 
 
     function joinGame(){
@@ -101,9 +100,13 @@
     function setName(){
       // console.log(document.getElementById("setNameField"));
       socket.emit('setName', document.getElementById("setNameField").value);
+      document.getElementById("joinScreen").style.display = "none";
+      document.getElementById("waitingScreen").style.display = "none";
+      document.getElementById("gameScreen").style.display = "block";
     }
 
     function startGame(){
+      console.log("starting game");
       socket.emit('startGame');
     }
 
@@ -118,14 +121,16 @@
       socket.emit("checkHand");
     }
 
-    socket.on('gameStarting', function(data){
-        const ctx = document.getElementById("ctx").getContext("2d");
-        ctx.font = '24px Arial';
-
-        cards = data.cards;
+    socket.on("newRound", function(data){
+      console.log("new round");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      moveHistory.innerHTML = "";
+      cards = data.cards;
         for (var i = 0; i < cards.length; i++){
-          ctx.fillText(cards[i], 0, 25 + i * 25);
+          ctx.fillText(cards[i], 10, 25 + i * 25);
         }
+
+        ctx.fillText("Lives: " + data.lives, 110, 25);
 
         playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
 
@@ -133,12 +138,6 @@
         document.getElementById("joinScreen").style.display = "none";
         document.getElementById("waitingScreen").style.display = "none";
         document.getElementById("gameScreen").style.display = "block";
-    });
-
-    socket.on("resolveDoubt", function(data){
-      if(data){
-        chat.innerHTML += '<div>' + data.doubter + ' incorrectly doubted ' + data.doubtee + '</div>';
-      }
     })
 
     socket.on("addToChat", function(data){
