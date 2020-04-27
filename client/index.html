@@ -79,7 +79,9 @@
   <script>
     var cards = {}
 
-    const socket = io()
+    const socket = io("http://127.0.0.1:2000", {
+      timeout: 100000
+    })
     const id = socket.id;
 
     const chatForm = document.getElementById("chatForm");
@@ -125,19 +127,24 @@
       console.log("new round");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       moveHistory.innerHTML = "";
-      cards = data.cards;
+
+      playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
+
+      document.getElementById("joinScreen").style.display = "none";
+      document.getElementById("waitingScreen").style.display = "none";
+      document.getElementById("gameScreen").style.display = "block";
+
+      if (data.lives == 0){
+        document.getElementById("handSelection").style.display = "none";
+        ctx.fillText("You LOST", 50, 50);
+      }
+      else{
+        ctx.fillText("Lives: " + data.lives, 110, 25);
+        cards = data.cards;
         for (var i = 0; i < cards.length; i++){
           ctx.fillText(cards[i], 10, 25 + i * 25);
         }
-
-        ctx.fillText("Lives: " + data.lives, 110, 25);
-
-        playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
-
-        
-        document.getElementById("joinScreen").style.display = "none";
-        document.getElementById("waitingScreen").style.display = "none";
-        document.getElementById("gameScreen").style.display = "block";
+      }
     })
 
     socket.on("addToChat", function(data){
@@ -154,6 +161,10 @@
       console.log(chatInput.value);
       socket.emit('chat', chatInput.value);
     }
+
+    // socket.on("disconnect", function(){
+    //   window.setTimeout('app.connect()', 5000);
+    // })
 
   </script>
 
@@ -326,6 +337,13 @@
 
     };
   </script>
+<!-- 
+  <script>
+    socket.on('ping', function(data){
+      socket.emit('pong', {beat: 1});
+    });
+  </script> -->
+
   
 </body>
 

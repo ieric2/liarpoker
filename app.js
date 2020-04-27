@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
+var io = require('socket.io')(serv, {pingTimeout: 60000});
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
@@ -53,8 +54,11 @@ function joinGame(socket){
   console.log("my name is: " + playerList[socket.id].name);
 }
 
+
+
 function drawCards(){
   for (i in playerList){
+    playerList[i].cards = [];
     for (var n = 0; n < playerList[i].lives; n++){
       card = freeCards[Math.floor(Math.random() * freeCards.length)];
       playerList[i].cards.push(card);
@@ -65,21 +69,22 @@ function drawCards(){
 }
 
 function setupRound(){
+  turnList = [];
   drawCards();
 
-    playerTurn = Math.floor(Math.random() * playerArray.length);
+  playerTurn = Math.floor(Math.random() * playerArray.length);
 
-    for(i in socketList){
-      console.log(playerList[i].cards);
-      socketList[i].emit('newRound', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name, lives: playerList[i].lives});
-    }
-    console.log(playerArray);
-    console.log("game Starting");  
+  for(i in socketList){
+    console.log(playerList[i].cards);
+    socketList[i].emit('newRound', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name, lives: playerList[i].lives});
+  }
+  console.log(playerArray);
+  console.log("round Starting");  
 }
 
 
 function checkHand(socket, data){
-  hand = turnList.pop();
+  hand = turnList[turnList.length - 1];
   player = hand[0];
   handType = hand[1];
   handSubtype = hand[2];
@@ -87,27 +92,25 @@ function checkHand(socket, data){
 
   console.log(usedCards);
 
-  numCounts = {};
-  suitCounts = {};
+  numCounts = {"2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0, "a": 0, "b": 0, "c": 0, "d": 0, "e": 0};
+  suitCounts = {"H": 0, "D": 0, "C": 0, "S": 0};
+
   for (var i = 0; i < usedCards.length; i++){
-    console.log(usedCards[i].charAt(0));
-    num = usedCards[i].charAt(0);
-    suit = usedCards[i].charAt(1);
-
-    if(numCounts[num] == undefined){
-      numCounts[num] = 1;
+    if (usedCards[i].length == 3){
+      num = convertCardValue(usedCards[i].substring(0, 2));
+      suit = usedCards[i].charAt(2);
     }
     else{
-      numCounts[num]++;
+      num = convertCardValue(usedCards[i].charAt(0));
+      suit = usedCards[i].charAt(1);
     }
 
-    if(suitCounts[suit] == undefined){
-      suitCounts[suit] = 1;
-    }
-    else{
-      suitCounts[suit]++;
-    }
+    console.log(num);
+
+    numCounts[num]++;
+    suitCounts[suit]++;
   }
+  console.log(numCounts);
 
   switch (handType){
     case 0: //highcard
@@ -121,7 +124,6 @@ function checkHand(socket, data){
     case 4:  //straight
       orderedKeys = Object.keys(numCounts);
       startIndex = orderedKeys.indexOf(handSubtype);
-      console.log(numCounts);
       for (var i = 0; i < 5; i++){
         if (startIndex - i == -1){
           if (numCounts['e'] < 1){
@@ -224,7 +226,6 @@ function convertCardValue(value){
   }
 }
 
-var io = require('socket.io')(serv, {});
 io.sockets.on('connection', function(socket){
   console.log("client connection");
   console.log(socket.id);
@@ -351,7 +352,13 @@ io.sockets.on('connection', function(socket){
       playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
     }
 
+    console.log(turnList)
+
     io.emit('addToChat', "<b> " + playerList[socket.id].name + " " + doubtValidity + " doubted " + turnList[turnList.length - 1][0] + "'s hand </b>")
+    for (i in playerList){
+      io.emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
+    }
+
 
     setupRound();
 
@@ -362,7 +369,8 @@ io.sockets.on('connection', function(socket){
     io.emit('addToChat', playerList[socket.id].name + ": " + data);
   })
 
-  socket.on('disconnect', function(){
+  socket.on('disconnect', function(reason){
+    console.log(reason);
     delete socketList[socket.id];
     delete playerList[socket.id];
     // playerArray.splice(playerArray.indexOf(socket.id), 1);
