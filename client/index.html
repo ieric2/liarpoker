@@ -48,31 +48,40 @@
       </div>
     </div>
     <br>
-    <form action="result.php" method="post" id="handSelection" style="vertical-align: top;">
-      <select name="category" id="handTypeSelector" style="vertical-align: top;">
-        <option value="highCard">High Card</option>
-        <option value="pair">Pair</option>
-        <option value="twoPair">Two Pair</option> 
-        <option value="triple">Three of a Kind</option> 
-        <option value="straight">Straight</option> 
-        <option value="flush">Flush</option>
-        <option value="fullHouse">Full House</option> 
-        <option value="quad">Four of a Kind</option>
-        <option value="straightFlush">Straight Flush</option> 
-        <option value="royalFlush">Royal Flush</option>
-      </select>
-      <select name="choices[]" id="handSubtypeSelector" size="4" style="min-width: 100px;">
-          <!-- js populates -->
-      </select>
-      <select name="choices2[]" id="handSubtype2Selector" size="4" style="min-width: 100px;">
-        <!-- js populates -->
-      </select>
-      <p></p>
-      <button type="button" onclick="playTurn()">Submit Hand</button>
-      <button type="button" onclick="castDoubt()">Cast Doubt</button>
-    </form>
-    <br><br>
-    <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
+    <div class="container" style="display: flex;">
+      <div style="width:33%; vertical-align: top;">
+        <form action="result.php" method="post" id="handSelection" style="display: none">
+          <select name="category" id="handTypeSelector" style="vertical-align: top;">
+            <option value="highCard">High Card</option>
+            <option value="pair">Pair</option>
+            <option value="twoPair">Two Pair</option> 
+            <option value="triple">Three of a Kind</option> 
+            <option value="straight">Straight</option> 
+            <option value="flush">Flush</option>
+            <option value="fullHouse">Full House</option> 
+            <option value="quad">Four of a Kind</option>
+            <option value="straightFlush">Straight Flush</option> 
+            <option value="royalFlush">Royal Flush</option>
+          </select>
+          <select name="choices[]" id="handSubtypeSelector" size="4" style="min-width: 100px;">
+              <!-- js populates -->
+          </select>
+          <select name="choices2[]" id="handSubtype2Selector" size="4" style="min-width: 100px;">
+            <!-- js populates -->
+          </select>
+          <p></p>
+          <button type="button" onclick="playTurn()">Submit Hand</button>
+          <button type="button" onclick="castDoubt()">Cast Doubt</button>
+        </form>
+        <br><br>
+        <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
+      </div>
+      <div id="playerList" style="width:33%;height:500px; overflow-y:scroll; padding-left: 10px;">
+        <text>
+          Player List:
+        </text>
+      </div>
+    </div>
   </div>
 
 
@@ -86,8 +95,9 @@
     const chatInput = document.getElementById("chatInput");
     const playerTurn = document.getElementById("playerTurn");
     const moveHistory = document.getElementById("moveHistory");
-    var canvas = document.getElementById("ctx")
-    var ctx = canvas.getContext("2d");
+    const playerListTag = document.getElementById("playerList");
+    const canvas = document.getElementById("ctx")
+    const ctx = canvas.getContext("2d");
     ctx.font = '30px Arial';
 
 
@@ -154,10 +164,22 @@
       moveHistory.innerHTML +=  '<div>' + data.pastMove + '</div>';
     })
 
+    socket.on("displayPlayButtons", function(){
+      document.getElementById("handSelection").style.display = "block";
+    })
+
+    socket.on("updatePlayerList", function(playerList){
+      playerListTag.innerHTML = "";
+      for (i in playerList){
+        playerListTag.innerHTML += '<div>' + playerList[i].name + '</div>';
+      }
+    })
+
     chatForm.onsubmit = function(e){
       e.preventDefault();
       console.log(chatInput.value);
       socket.emit('chat', chatInput.value);
+      chatInput.value = "";
     }
 
     // socket.on("disconnect", function(){

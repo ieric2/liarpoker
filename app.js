@@ -50,10 +50,9 @@ function joinGame(socket){
   playerList[socket.id].setName(socket.id);
   playerArray.push(socket.id);
   io.emit("addToChat", socket.id + " has joined the game");
-  console.log("the number of players is: " + playerArray.length);
-  console.log("my name is: " + playerList[socket.id].name);
+  io.emit("updatePlayerList", playerList);
+  console.log(playerList);
 }
-
 
 
 function drawCards(){
@@ -238,11 +237,13 @@ io.sockets.on('connection', function(socket){
 
   socket.on("setName", function(data){
     playerList[socket.id].setName(data);
+    io.emit("updatePlayerList", playerList);
   });
 
   socket.on('startGame', function(){
 
     console.log(playerList);
+    io.emit("displayPlayButtons");
 
     for (i in socketList){
       if (playerList[i] == null){
@@ -373,6 +374,7 @@ io.sockets.on('connection', function(socket){
     console.log(reason);
     delete socketList[socket.id];
     delete playerList[socket.id];
+    io.emit("updatePlayerList", playerList);
     // playerArray.splice(playerArray.indexOf(socket.id), 1);
   });
 });
