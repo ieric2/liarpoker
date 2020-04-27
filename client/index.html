@@ -1,7 +1,7 @@
 <html>
 
 <head>
-  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <script src="https://cdn.socket.io/socket.io-2.3.0.js"></script>
 
   <script>
   </script>
@@ -79,9 +79,7 @@
   <script>
     var cards = {}
 
-    const socket = io("http://127.0.0.1:2000", {
-      timeout: 100000
-    })
+    const socket = io();
     const id = socket.id;
 
     const chatForm = document.getElementById("chatForm");
