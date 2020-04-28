@@ -241,7 +241,7 @@ io.sockets.on('connection', function(socket){
   });
 
   socket.on('startGame', function(){
-
+    gameInProgress = true;
     console.log(playerList);
     io.emit("displayPlayButtons");
 
@@ -256,6 +256,7 @@ io.sockets.on('connection', function(socket){
   });
 
   socket.on('playTurn', function(data){
+    if ()
     console.log(playerTurn);
 
     console.log("turn for: " + playerList[playerArray[playerTurn]].name);
