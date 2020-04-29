@@ -155,6 +155,10 @@
       }
     })
 
+    socket.on("clearChat", function(){
+      chat.innerHTML = "";
+    })
+
     socket.on("addToChat", function(data){
       chat.innerHTML += '<div>' + data + '</div>';
     });

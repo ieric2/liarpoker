@@ -245,11 +245,13 @@ io.sockets.on('connection', function(socket){
     gameInProgress = true;
     console.log(playerList);
     io.emit("displayPlayButtons");
+    io.emit("clearChat");
 
     for (i in socketList){
       if (playerList[i] == null){
         joinGame(socketList[i]);
       }
+      playerList[i].lives = MAX_LIVES;
     }
 
     setupRound();
