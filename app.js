@@ -59,7 +59,7 @@ function joinGame(socket){
 function drawCards(){
   for (i in playerList){
     playerList[i].cards = [];
-    for (var n = 0; n < playerList[i].lives; n++){
+    for (var n = MAX_LIVES - playerList[i].lives + 1; n < playerList[i].lives; n++){
       card = freeCards[Math.floor(Math.random() * freeCards.length)];
       playerList[i].cards.push(card);
       freeCards.splice(freeCards.indexOf(card), 1);
