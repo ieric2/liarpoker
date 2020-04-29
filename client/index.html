@@ -108,7 +108,10 @@
     }
 
     function setName(){
+      e.preventDefault();
+
       // console.log(document.getElementById("setNameField"));
+
       socket.emit('setName', document.getElementById("setNameField").value);
       document.getElementById("joinScreen").style.display = "none";
       document.getElementById("waitingScreen").style.display = "none";
@@ -315,7 +318,7 @@
           text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
         },
         flush: {
-          text: []
+          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
         },
         straight: {
           text: []
