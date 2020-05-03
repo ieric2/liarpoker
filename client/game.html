@@ -9,14 +9,68 @@
 
 
 <body>
-  <div id="joinScreen"> 
-    WELCOME TO LIARS POKER
-  <input type="button" name="joinGameButton" value="Join Game" onclick="joinGame()"/>
-  <form>
-    <input type="text" id="setNameField"/>
-    <button type="button" onclick="setName()">Set Name</button>
-  </form>
+  <div id="gameScreen">
+    <!-- Add a player turn display -->
+    <!-- Add a turn history tracker -->
+    <text id="playerTurn">
+
+    </text>
+    <div class="container" style="display: flex;">
+      <canvas id="ctx"  style="width:33%;height:500px; border:2px solid #000000;"></canvas> 
+      <div style="width:33%; padding-left: 10px;">
+        <div id="chat" style="height:500px; overflow-y:scroll;">
+        </div>
+        </br>
+        <text>
+          Chat Here:
+        </text>
+        <form id="chatForm">
+          <input id="chatInput" type="text" style="height:30px;width:95%">
+        </form>
+      </div>
+      <div id="moveHistory" style="width:33%;height:500px; overflow-y:scroll; padding-left: 10px;">
+      </div>
+    </div>
+    <br>
+    <div class="container" style="display: flex;">
+      <div style="width:33%; vertical-align: top;">
+        <form action="result.php" method="post" id="handSelection" style="display: none">
+          <select name="category" id="handTypeSelector" style="vertical-align: top;">
+            <option value="highCard">High Card</option>
+            <option value="pair">Pair</option>
+            <option value="twoPair">Two Pair</option> 
+            <option value="triple">Three of a Kind</option> 
+            <option value="straight">Straight</option> 
+            <option value="flush">Flush</option>
+            <option value="fullHouse">Full House</option> 
+            <option value="quad">Four of a Kind</option>
+            <option value="straightFlush">Straight Flush</option> 
+            <option value="royalFlush">Royal Flush</option>
+          </select>
+          <select name="choices[]" id="handSubtypeSelector" size="4" style="min-width: 100px;">
+              <!-- js populates -->
+          </select>
+          <select name="choices2[]" id="handSubtype2Selector" size="4" style="min-width: 100px;">
+            <!-- js populates -->
+          </select>
+          <p></p>
+          <button type="button" onclick="playTurn()">Submit Hand</button>
+          <button type="button" onclick="castDoubt()">Cast Doubt</button>
+        </form>
+        <br><br>
+        <!-- <form> -->
+          <!-- <input type="checkbox" value = "/> -->
+          <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
+        <!-- </form> -->
+      </div>
+      <text>
+        Player List:
+      </text>
+      <div id="playerList" style="width:33%;height:500px; overflow-y:scroll; padding-left: 10px;">
+      </div>
+    </div>
   </div>
+
 
   <script>
     var cards = {}
@@ -35,20 +89,7 @@
 
 
     function joinGame(){
-      // document.getElementById("joinScreen").style.display = "none";
-      // document.getElementById("waitingScreen").style.display = "block";
       socket.emit("joinGame");
-    }
-
-    function setName(){
-      // e.preventDefault();
-
-      // console.log(document.getElementById("setNameField"));
-
-      socket.emit('setName', document.getElementById("setNameField").value);
-      document.getElementById("joinScreen").style.display = "none";
-      document.getElementById("waitingScreen").style.display = "none";
-      document.getElementById("gameScreen").style.display = "block";
     }
 
     function startGame(){

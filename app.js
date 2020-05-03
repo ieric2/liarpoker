@@ -6,6 +6,11 @@ var io = require('socket.io')(serv, {pingTimeout: 60000});
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
 });
+
+app.get('/:roomId', function(req, res){
+  res.sendFile(__dirname + '/client/game.html');
+})
+
 app.use('/client', express.static(__dirname + '/client'));
 
 serv.listen(process.env.PORT || 2000);
