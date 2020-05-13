@@ -4,9 +4,6 @@ const server = require('http').Server(app);
 const io = require('socket.io')(server);
 server.listen(process.env.PORT || 8080);
 
-// var serv = require('http').Server(app);
-// var { uuid } = require('uuidv4');
-var io = require('socket.io')(serv);
 
 
 
