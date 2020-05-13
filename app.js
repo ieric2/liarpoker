@@ -1,6 +1,8 @@
 var express = require('express');
 var app = express();
-var serv = require('http').Server(app);
+var serv = app.listen(process.env.PORT || 2000);
+
+// var serv = require('http').Server(app);
 // var { uuid } = require('uuidv4');
 var io = require('socket.io')(serv, {pingTimeout: 5000, pingInterval: 1000});
 
@@ -16,7 +18,6 @@ app.get('/game/:roomId', function(req, res){
 
 app.use('/client', express.static(__dirname + '/client'));
 
-serv.listen(process.env.PORT || 2000);
 //console.log("Server started.");
 
 var MAX_LIVES = 5;
