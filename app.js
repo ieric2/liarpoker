@@ -4,6 +4,8 @@ var serv = require('http').Server(app);
 // var { uuid } = require('uuidv4');
 var io = require('socket.io')(serv, {pingTimeout: 5000, pingInterval: 1000});
 
+
+
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
 });
