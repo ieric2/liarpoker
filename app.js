@@ -1,20 +1,21 @@
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
-var io = require('socket.io')(serv, {pingTimeout: 60000});
+// var { uuid } = require('uuidv4');
+var io = require('socket.io')(serv, {pingTimeout: 5000, pingInterval: 1000});
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
 });
 
-app.get('/:roomId', function(req, res){
+app.get('/game/:roomId', function(req, res){
   res.sendFile(__dirname + '/client/game.html');
 })
 
 app.use('/client', express.static(__dirname + '/client'));
 
 serv.listen(process.env.PORT || 2000);
-console.log("Server started.");
+//console.log("Server started.");
 
 var MAX_LIVES = 5;
 
@@ -38,7 +39,7 @@ class Player{
     this.cards = [];
     this.alive = false;
     this.winner = false;
-
+    this.active = true;
   }
   setName(name){
     this.name = name;
@@ -51,13 +52,22 @@ class Player{
   }
 }
 
-function joinGame(socket){
-  playerList[socket.id] = new Player(socket.id);
-  playerList[socket.id].setName(socket.id);
-  playerArray.push(socket.id);
-  io.emit("addToChat", socket.id + " has joined the game");
+function createPlayer(socket){
+  playerList[socket.realId] = new Player(socket.realId);
+  playerArray.push(socket.realId);
+}
+
+function createGame(socket){
+
+}
+
+function joinGame(socket, gameId){
+  url = "/game/" + gameId
+  io.to(socket.realId).emit("redirect", url)
+
+  io.emit("addToChat", playerList[socket.realId].name + " has joined the game");
   io.emit("updatePlayerList", playerList);
-  console.log(playerList);
+  // //console.log(playerList);
 }
 
 
@@ -70,6 +80,7 @@ function drawCards(){
       freeCards.splice(freeCards.indexOf(card), 1);
       usedCards.push(card);
     }
+    // //console.log(playerList[i].cards)
   }
 }
 
@@ -78,24 +89,24 @@ function setupRound(){
   drawCards();
 
   playerTurn = Math.floor(Math.random() * playerArray.length);
-
-  for(i in socketList){
-    console.log(playerList[i].cards);
-    socketList[i].emit('newRound', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name, lives: playerList[i].lives});
+  //console.log(Object.keys(socketList))
+  for(var i in playerList){
+    console.log(i)
+    io.to(socketList[i].realId).emit('newRound', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name, lives: playerList[i].lives});
   }
-  console.log(playerArray);
-  console.log("round Starting");  
 }
 
+//---------- GAME LOGIC -----------//
 
-function checkHand(socket, data){
+function checkHand(){
   hand = turnList[turnList.length - 1];
+  console.log(turnList)
   player = hand[0];
   handType = hand[1];
   handSubtype = hand[2];
   handSubtype2 = hand[3];
 
-  console.log(usedCards);
+  //console.log(usedCards);
 
   numCounts = {"2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0, "a": 0, "b": 0, "c": 0, "d": 0, "e": 0};
   suitCounts = {"H": 0, "D": 0, "C": 0, "S": 0};
@@ -110,12 +121,12 @@ function checkHand(socket, data){
       suit = usedCards[i].charAt(1);
     }
 
-    console.log(num);
+    //console.log(num);
 
     numCounts[num]++;
     suitCounts[suit]++;
   }
-  console.log(numCounts);
+  //console.log(numCounts);
 
   switch (handType){
     case 0: //highcard
@@ -172,15 +183,15 @@ function checkHand(socket, data){
   }
 }
 
-function checkHandIncreases(data){
+function checkhandIncreases(data){
   prevHand = turnList[turnList.length - 1];
   prevHandType = prevHand[1];
   prevHandSubtype = prevHand[2];
   prevHandSubtype2 = prevHand[3];
 
   handType = data[0];
-  console.log(handType);
-  console.log(prevHandType);
+  //console.log(handType);
+  //console.log(prevHandType);
   if (handType < prevHandType){
     return false;
   }
@@ -231,65 +242,93 @@ function convertCardValue(value){
   }
 }
 
-io.sockets.on('connection', function(socket){
-  console.log("client connection");
-  console.log(socket.id);
 
-  socketList[socket.id] = socket;
+
+io.on('connection', function(socket){
+  socket.on('startSession', function(data){
+
+    if (data.sessionId == null || !playerArray.includes(data.sessionId)){
+      socket.realId = socket.id;
+      // //console.log(socket.realId)
+
+      // //console.log("create new user")
+      socketList[socket.id] = socket;
+      // //console.log(Object.keys(socketList))
+
+      createPlayer(socket)
+    }
+    else{
+      // //console.log("reconnect old user")
+      socket.realId = data.sessionId
+      //console.log(socket.realId)
+
+      playerList[socket.realId].active = true
+    }
+    socket.join(socket.realId)
+    socket.emit("sessionAck", {sessionId: socket.realId})
+    io.emit("updatePlayerList", playerList);
+
+  })
+
 
   socket.on("joinGame", function(){
     joinGame(socket);
   });
 
   socket.on("setName", function(data){
-    playerList[socket.id].setName(data);
+    playerList[socket.realId].setName(data)
     io.emit("updatePlayerList", playerList);
   });
 
   socket.on('startGame', function(){
-    gameInProgress = true;
-    console.log(playerList);
-    io.emit("displayPlayButtons");
-    io.emit("clearChat");
+    if (playerArray.length > 1){
+      gameInProgress = true;
+      // //console.log(playerList);
+      io.emit("displayPlayButtons");
+      io.emit("clearChat");
+      io.emit("updatePlayerList", playerList);
 
-    for (i in socketList){
-      if (playerList[i] == null){
-        joinGame(socketList[i]);
+  
+      for (i in playerList){
+        playerList[i].lives = MAX_LIVES;
       }
-      playerList[i].lives = MAX_LIVES;
+  
+      setupRound();
+    }
+    else{
+      io.emit("addToChat", "<b> not enough people <b>")
     }
 
-    setupRound();
 
   });
 
   socket.on('playTurn', function(data){
-    // if ()
-    console.log(playerTurn);
+    //console.log("turn playing")
+    //console.log(playerTurn);
 
-    console.log("turn for: " + playerList[playerArray[playerTurn]].name);
-    if (socket.id == playerArray[playerTurn]){
-      console.log("turn played");
-      console.log("hand: "+ data[0] + data[1] + data[2]);
+    //console.log("turn for: " + playerList[playerArray[playerTurn]].name);
+    if (socket.realId == playerArray[playerTurn]){
+      //console.log("turn played");
+      //console.log("hand: "+ data[0] + data[1] + data[2]);
       error = false;
       
       switch(data[0]){
         case "royalFlush":
-          message = playerList[socket.id].name + " played a ROYAL FLUSH";
+          message = playerList[socket.realId].name + " played a ROYAL FLUSH";
           data[0] = 9;
           break;
         case "straightFlush":
-          message = playerList[socket.id].name + " played a " + data[2] + " high " + data[1] + " STRAIGHT FLUSH";
+          message = playerList[socket.realId].name + " played a " + data[2] + " high " + data[1] + " STRAIGHT FLUSH";
           data[0] = 8;
           data[2] = convertCardValue(data[2]);
           break;
         case "quad":
-          message = playerList[socket.id].name + " played FOUR " + data[1] + "'s";
+          message = playerList[socket.realId].name + " played FOUR " + data[1] + "'s";
           data[0] = 7;
           data[2] = convertCardValue(data[1]);
           break;
         case "fullHouse":
-          message = playerList[socket.id].name + " played " + data[1] + "'s FULL of " + data[2] + "'s";
+          message = playerList[socket.realId].name + " played " + data[1] + "'s FULL of " + data[2] + "'s";
           data[0] = 6;
           data[1] = convertCardValue(data[1]);
           data[2] = convertCardValue(data[2]);
@@ -299,21 +338,21 @@ io.sockets.on('connection', function(socket){
           }
           break;
         case "flush":
-          message = playerList[socket.id].name + " played a " + data[1] + " FLUSH";
+          message = playerList[socket.realId].name + " played a " + data[1] + " FLUSH";
           data[0] = 5;
           break;
         case "straight":
-          message = playerList[socket.id].name + " played a " + data[1] + " high STRAIGHT";
+          message = playerList[socket.realId].name + " played a " + data[1] + " high STRAIGHT";
           data[0] = 4;
           data[1] = convertCardValue(data[1]);
           break;
         case "triple":
-          message = playerList[socket.id].name + " played THREE " + data[1] + "'s";
+          message = playerList[socket.realId].name + " played THREE " + data[1] + "'s";
           data[0] = 3;
           data[1] = convertCardValue(data[1]);
           break;
         case "twoPair":
-          message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s and a PAIR of " + data[2] + "'s";
+          message = playerList[socket.realId].name + " played a PAIR of " + data[1] + "'s and a PAIR of " + data[2] + "'s";
           data[0] = 2;
           data[1] = convertCardValue(data[1]);
           data[2] = convertCardValue(data[2]);
@@ -323,19 +362,19 @@ io.sockets.on('connection', function(socket){
           }
           break;
         case "pair":
-          message = playerList[socket.id].name + " played a PAIR of " + data[1] + "'s";
+          message = playerList[socket.realId].name + " played a PAIR of " + data[1] + "'s";
           data[0] = 1;
           data[1] = convertCardValue(data[1]);
           break;
         case "highCard":        
-          message = playerList[socket.id].name + " played HIGH CARD " + data[1];
+          message = playerList[socket.realId].name + " played HIGH CARD " + data[1];
           data[0] = 0;
           data[1] = convertCardValue(data[1]);
           break;
         }
 
       if(!error && (turnList.length == 0 || checkHandIncreases(data))){
-        turnList.push([playerList[socket.id].name, data[0], data[1], data[2], message]);
+        turnList.push([playerList[socket.realId].name, data[0], data[1], data[2], message]);
   
         io.emit("addToChat", '<i>' + message + '</i>');
     
@@ -352,19 +391,19 @@ io.sockets.on('connection', function(socket){
   socket.on('checkHand', function(){
     //true if there is that hand
     handValidity = checkHand(socket);
-    console.log(handValidity);
+    //console.log(handValidity);
     doubtValidity = "CORRECTLY";
     if (handValidity){
       doubtValidity = "INCORRECTLY";
-      playerList[socket.id].lives--;
+      playerList[socket.realId].lives--;
     }
     else{
       playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
     }
 
-    console.log(turnList)
+    //console.log(turnList)
 
-    io.emit('addToChat', "<b> " + playerList[socket.id].name + " " + doubtValidity + " doubted " + turnList[turnList.length - 1][0] + "'s hand </b>")
+    io.emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnList[turnList.length - 1][0] + "'s hand </b>")
     for (i in playerList){
       io.emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
     }
@@ -376,14 +415,29 @@ io.sockets.on('connection', function(socket){
   });
 
   socket.on('chat', function(data){
-    io.emit('addToChat', playerList[socket.id].name + ": " + data);
+    // //console.log(playerList)
+    io.emit('addToChat', playerList[socket.realId].name + ": " + data);
   })
 
+
   socket.on('disconnect', function(reason){
-    console.log(reason);
-    delete socketList[socket.id];
-    delete playerList[socket.id];
-    io.emit("updatePlayerList", playerList);
-    // playerArray.splice(playerArray.indexOf(socket.id), 1);
+    //console.log(reason);
+    if (playerArray.includes(socket.realId)){
+      // //console.log(socket.realId)
+      // //console.log(playerArray)
+      // //console.log(playerList)
+      // //console.log(socketList)
+      playerList[socket.realId].active = false
+      setTimeout(function(){
+        if (!playerList[socket.realId].active){
+          delete socketList[socket.realId]
+          delete playerList[socket.realId]
+          playerArray.splice(playerArray.indexOf(socket.realId))
+          io.emit("updatePlayerList", playerList);
+
+          console.log("removed")
+        }
+      }, 5000)
+    }
   });
 });

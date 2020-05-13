@@ -77,6 +77,14 @@
 
     const socket = io();
     const id = socket.id;
+    var session_id;
+    let data = sessionStorage.getItem('sessionId');
+    if (data == null) {
+        session_id = null
+    } else {
+        session_id = data//when we connect n times 
+    }
+    socket.emit('startSession', {  sessionId: session_id })
 
     const chatForm = document.getElementById("chatForm");
     const chatInput = document.getElementById("chatInput");
@@ -88,12 +96,14 @@
     ctx.font = '30px Arial';
 
 
-    function joinGame(){
-      socket.emit("joinGame");
-    }
+    // function joinGame(){
+    //   socket.emit("joinGame");
+    // }
 
     function startGame(){
       console.log("starting game");
+      socket.emit('test1');
+      socket.emit('test2');
       socket.emit('startGame');
     }
 
@@ -101,12 +111,18 @@
       var handType = document.getElementById("handTypeSelector").value;
       var handVariant = document.getElementById("handSubtypeSelector").value;
       var handVariant2 = document.getElementById("handSubtype2Selector").value;
+      console.log("turn")
       socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2});
     }
 
     function castDoubt(){
       socket.emit("checkHand");
     }
+
+    socket.on('sessionAck', function(data){
+      sessionStorage.setItem('sessionId', data.sessionId);
+    })
+
 
     socket.on("newRound", function(data){
       console.log("new round");
@@ -115,8 +131,6 @@
 
       playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
 
-      document.getElementById("joinScreen").style.display = "none";
-      document.getElementById("waitingScreen").style.display = "none";
       document.getElementById("gameScreen").style.display = "block";
 
       if (data.lives == 0){

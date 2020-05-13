@@ -19,36 +19,34 @@
   </div>
 
   <script>
+
     var cards = {}
 
     const socket = io();
     const id = socket.id;
 
-    const chatForm = document.getElementById("chatForm");
-    const chatInput = document.getElementById("chatInput");
-    const playerTurn = document.getElementById("playerTurn");
-    const moveHistory = document.getElementById("moveHistory");
-    const playerListTag = document.getElementById("playerList");
-    const canvas = document.getElementById("ctx")
-    const ctx = canvas.getContext("2d");
-    ctx.font = '30px Arial';
+    var session_id;
+    let data = sessionStorage.getItem('sessionId');
+    if (data == null) {
+        session_id = null
+    } else {
+        session_id = data
+    }
+    socket.emit('startSession', {  sessionId: session_id })
 
 
     function joinGame(){
-      // document.getElementById("joinScreen").style.display = "none";
-      // document.getElementById("waitingScreen").style.display = "block";
       socket.emit("joinGame");
     }
 
+    function createGame(){
+      socket.emit("createGame");
+    }
+    
+
+
     function setName(){
-      // e.preventDefault();
-
-      // console.log(document.getElementById("setNameField"));
-
       socket.emit('setName', document.getElementById("setNameField").value);
-      document.getElementById("joinScreen").style.display = "none";
-      document.getElementById("waitingScreen").style.display = "none";
-      document.getElementById("gameScreen").style.display = "block";
     }
 
     function startGame(){
@@ -56,257 +54,16 @@
       socket.emit('startGame');
     }
 
-    function playTurn(){
-      var handType = document.getElementById("handTypeSelector").value;
-      var handVariant = document.getElementById("handSubtypeSelector").value;
-      var handVariant2 = document.getElementById("handSubtype2Selector").value;
-      socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2});
-    }
-
-    function castDoubt(){
-      socket.emit("checkHand");
-    }
-
-    socket.on("newRound", function(data){
-      console.log("new round");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      moveHistory.innerHTML = "";
-
-      playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
-
-      document.getElementById("joinScreen").style.display = "none";
-      document.getElementById("waitingScreen").style.display = "none";
-      document.getElementById("gameScreen").style.display = "block";
-
-      if (data.lives == 0){
-        document.getElementById("handSelection").style.display = "none";
-        ctx.fillText("You LOST", 50, 50);
-      }
-      else{
-        ctx.fillText("Lives: " + data.lives, 110, 25);
-        cards = data.cards;
-        for (var i = 0; i < cards.length; i++){
-          ctx.fillText(cards[i], 10, 25 + i * 25);
-        }
-      }
+    socket.on('sessionAck', function(data){
+      sessionStorage.setItem('sessionId', data.sessionId);
     })
 
-    socket.on("clearChat", function(){
-      chat.innerHTML = "";
+
+    socket.on("redirect", function(destination){
+      window.location.href = destination;
     })
 
-    socket.on("addToChat", function(data){
-      chat.innerHTML += '<div>' + data + '</div>';
-    });
-
-    socket.on("updateGame", function(data){
-      playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
-      moveHistory.innerHTML +=  '<div>' + data.pastMove + '</div>';
-    })
-
-    socket.on("displayPlayButtons", function(){
-      document.getElementById("handSelection").style.display = "block";
-    })
-
-    socket.on("updatePlayerList", function(playerList){
-      playerListTag.innerHTML = "";
-      for (i in playerList){
-        playerListTag.innerHTML += '<div>' + playerList[i].name + '</div>';
-      }
-    })
-
-    chatForm.onsubmit = function(e){
-      e.preventDefault();
-      console.log(chatInput.value);
-      socket.emit('chat', chatInput.value);
-      chatInput.value = "";
-    }
-
-    // socket.on("disconnect", function(){
-    //   window.setTimeout('app.connect()', 5000);
-    // })
+    
 
   </script>
 
-
-
-
-
-  <script>
-    function removeAllOptions(sel, removeGrp) {
-      var len, groups, par;
-      if (removeGrp) {
-        groups = sel.getElementsByTagName('optgroup');
-        len = groups.length;
-        for (var i=len; i; i--) {
-          sel.removeChild( groups[i-1] );
-        }
-      }
-      len = sel.options.length;
-      for (var i=len; i; i--) {
-        par = sel.options[i-1].parentNode;
-        par.removeChild( sel.options[i-1] );
-      }
-    }
-
-    function appendDataToSelect(sel, obj) {
-      var f = document.createDocumentFragment();
-      var labels = [], group, opts;
-
-      function addOptions(obj) {
-        var f = document.createDocumentFragment();
-        var o;
-        for (var i=0, len=obj.text.length; i<len; i++) {
-          o = document.createElement('option');
-          o.appendChild( document.createTextNode( obj.text[i] ) );
-          if ( obj.value ) {
-            o.value = obj.value[i];
-          }
-          f.appendChild(o);
-        }
-        return f;
-      }
-      
-      if ( obj.text ) {
-        opts = addOptions(obj);
-        f.appendChild(opts);
-      } else {
-        for ( var prop in obj ) {
-          if ( obj.hasOwnProperty(prop) ) {
-            labels.push(prop);
-          }
-        }
-        for (var i=0, len=labels.length; i<len; i++) {
-          group = document.createElement('optgroup');
-          group.label = labels[i];
-          f.appendChild(group);
-          opts = addOptions(obj[ labels[i] ] );
-          group.appendChild(opts);
-        }
-      }
-      sel.appendChild(f);
-    }
-
-    // anonymous function assigned to onchange event of controlling select list
-    document.forms['handSelection'].elements['category'].onchange = function(e) {
-      var relName = 'choices[]';
-      var relList = this.form.elements[relName];
-      var obj = Select_List_Data[ relName ][ this.value ];
-
-      removeAllOptions(relList, true);
-      appendDataToSelect(relList, obj);
-
-      var relName2 = 'choices2[]';
-      var relList2 = this.form.elements[relName2];
-      var obj2 = Select_List_Data[ relName2 ][ this.value ];
-
-      removeAllOptions(relList2, true);
-      appendDataToSelect(relList2, obj2);
-    };
-
-    var Select_List_Data = {
-      'choices[]': {
-        royalFlush: {
-          text: ["Heart", "Spade", "Diamond", "Club"]
-        },
-        straightFlush: {
-          text: ["Heart", "Spade", "Diamond", "Club"]
-        },
-        quad:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        fullHouse:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        flush: {
-          text: ["Heart", "Spade", "Diamond", "Club"]
-        },
-        straight: {
-          text: ["5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        triple:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        twoPair:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        pair:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        highCard:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        }
-      },
-      'choices2[]': {
-        royalFlush: {
-          text: []
-        },
-        straightFlush: {
-          text: ["5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        quad:{
-          text: []
-        },
-        fullHouse:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        flush: {
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        straight: {
-          text: []
-        },
-        triple:{
-          text: []
-        },
-        twoPair:{
-          text: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-        },
-        pair:{
-          text: []
-        },
-        highCard:{
-          text: []
-        }
-      }
-        
-    };
-
-    // populate associated select list when page loads
-    window.onload = function() {
-      var form = document.forms['handSelection'];
-      
-      // reference to controlling select list
-      var sel = form.elements['category'];
-      sel.selectedIndex = 0;
-
-      var sel2 = form.elements['category'];
-      sel2.selectedIndex = 0;
-      
-      var relName = 'choices[]';
-      var rel = form.elements[ relName ];
-      var data = Select_List_Data[ relName ][ sel.value ];
-
-      var relName2 = 'choices2[]';
-      var rel2 = form.elements[ relName2 ];
-      var data2= Select_List_Data[ relName2 ][ sel.value ];
-      
-      // add options to associated select list
-      appendDataToSelect(rel, data);
-      appendDataToSelect(rel2, data2);
-
-    };
-  </script>
-<!-- 
-  <script>
-    socket.on('ping', function(data){
-      socket.emit('pong', {beat: 1});
-    });
-  </script> -->
-
-  
-</body>
-
-
-
-</html>
