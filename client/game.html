@@ -87,6 +87,7 @@
         session_id = data//when we connect n times 
     }
     socket.emit('startSession', {  sessionId: session_id })
+    socket.emit('roomEntered', window.location.pathname.split('/')[2])
 
     const chatForm = document.getElementById("chatForm");
     const chatInput = document.getElementById("chatInput");
@@ -96,11 +97,6 @@
     const canvas = document.getElementById("ctx")
     const ctx = canvas.getContext("2d");
     ctx.font = '30px Arial';
-
-
-    // function joinGame(){
-    //   socket.emit("joinGame");
-    // }
 
     function startGame(){
       console.log("starting game");

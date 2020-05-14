@@ -4,19 +4,12 @@ const server = require('http').Server(app);
 const io = require('socket.io')(server);
 server.listen(process.env.PORT || 8080);
 
-
-
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
 });
 
 app.get('/game/:roomId', function(req, res){
-  // if ([playerArray].includes(req.params.roomId)){
-    res.sendFile(__dirname + '/client/game.html');
-  // }
-  // else{
-  //   res.sendFile(__dirname + '/client/index.html');
-  // }
+  res.sendFile(__dirname + '/client/game.html');
 })
 app.use('/client', express.static(__dirname + '/client'));
 
@@ -26,8 +19,9 @@ app.use('/client', express.static(__dirname + '/client'));
 var MAX_LIVES = 5;
 
 var socketList = {};
-var turnList = [];
 var playerList = {};
+
+var turnArray = [];
 var playerArray = [];
 var gameArray = [];
 var playerTurn = null;
@@ -78,7 +72,7 @@ function drawCards(){
 }
 
 function setupRound(){
-  turnList = [];
+  turnArray = [];
   drawCards();
 
   playerTurn = Math.floor(Math.random() * playerArray.length);
@@ -92,8 +86,8 @@ function setupRound(){
 //---------- GAME LOGIC -----------//
 
 function checkHand(){
-  hand = turnList[turnList.length - 1];
-  console.log(turnList)
+  hand = turnArray[turnArray.length - 1];
+  console.log(turnArray)
   player = hand[0];
   handType = hand[1];
   handSubtype = hand[2];
@@ -177,7 +171,7 @@ function checkHand(){
 }
 
 function checkhandIncreases(data){
-  prevHand = turnList[turnList.length - 1];
+  prevHand = turnArray[turnArray.length - 1];
   prevHandType = prevHand[1];
   prevHandSubtype = prevHand[2];
   prevHandSubtype2 = prevHand[3];
@@ -269,6 +263,13 @@ io.on('connection', function(socket){
     socket.emit("sessionAck", {sessionId: socket.realId})
     io.emit("updatePlayerList", playerList);
 
+  })
+
+  socket.on("roomEntered", function(gameId){
+    if(!gameArray.includes(gameId)){
+      console.log("Game created: " + gameId)
+      gameArray.push(gameId)
+    }
   })
 
   socket.on("createGame", function(gameId){
@@ -385,14 +386,14 @@ io.on('connection', function(socket){
           break;
         }
 
-      if(!error && (turnList.length == 0 || checkHandIncreases(data))){
-        turnList.push([playerList[socket.realId].name, data[0], data[1], data[2], message]);
+      if(!error && (turnArray.length == 0 || checkHandIncreases(data))){
+        turnArray.push([playerList[socket.realId].name, data[0], data[1], data[2], message]);
   
         io.emit("addToChat", '<i>' + message + '</i>');
     
         playerTurn = ++playerTurn % playerArray.length;
     
-        io.emit("updateGame", {newPlayerTurn: playerList[playerArray[playerTurn]].name, pastMove: turnList[turnList.length - 1][4]})
+        io.emit("updateGame", {newPlayerTurn: playerList[playerArray[playerTurn]].name, pastMove: turnArray[turnArray.length - 1][4]})
       }
       else{
         socket.emit("addToChat", "<b> please select a higher hand <b>")
@@ -413,9 +414,9 @@ io.on('connection', function(socket){
       playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
     }
 
-    //console.log(turnList)
+    //console.log(turnArray)
 
-    io.emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnList[turnList.length - 1][0] + "'s hand </b>")
+    io.emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnArray[turnArray.length - 1][0] + "'s hand </b>")
     for (i in playerList){
       io.emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
     }
