@@ -6,16 +6,20 @@ server.listen(process.env.PORT || 8080);
 
 
 
-
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
 });
 
 app.get('/game/:roomId', function(req, res){
-  res.sendFile(__dirname + '/client/game.html');
+  // if ([playerArray].includes(req.params.roomId)){
+    res.sendFile(__dirname + '/client/game.html');
+  // }
+  // else{
+  //   res.sendFile(__dirname + '/client/index.html');
+  // }
 })
-
 app.use('/client', express.static(__dirname + '/client'));
+
 
 //console.log("Server started.");
 
@@ -25,6 +29,7 @@ var socketList = {};
 var turnList = [];
 var playerList = {};
 var playerArray = [];
+var gameArray = [];
 var playerTurn = null;
 var freeCards = [ "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "10H", "JH", "QH", "KH", "AH",
               "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "10D", "JD", "QD", "KD", "AD",
@@ -58,20 +63,6 @@ function createPlayer(socket){
   playerList[socket.realId] = new Player(socket.realId);
   playerArray.push(socket.realId);
 }
-
-function createGame(socket){
-
-}
-
-function joinGame(socket, gameId){
-  url = "/game/" + gameId
-  io.to(socket.realId).emit("redirect", url)
-
-  io.emit("addToChat", playerList[socket.realId].name + " has joined the game");
-  io.emit("updatePlayerList", playerList);
-  // //console.log(playerList);
-}
-
 
 function drawCards(){
   for (i in playerList){
@@ -244,6 +235,21 @@ function convertCardValue(value){
   }
 }
 
+function joinGame(socket, gameId){
+
+  if (gameArray.includes(gameId)){
+    console.log("joining room: " + gameId)
+    url = "/game/" + gameId
+    io.to(socket.realId).emit("redirect", url)
+  
+    io.emit("addToChat", playerList[socket.realId].name + " has joined the game");
+    io.emit("updatePlayerList", playerList);
+  }
+  else{
+    io.emit("error", "Room does not exist")
+  }
+}
+
 
 
 io.on('connection', function(socket){
@@ -251,19 +257,12 @@ io.on('connection', function(socket){
 
     if (data.sessionId == null || !playerArray.includes(data.sessionId)){
       socket.realId = socket.id;
-      // //console.log(socket.realId)
-
-      // //console.log("create new user")
       socketList[socket.id] = socket;
-      // //console.log(Object.keys(socketList))
 
       createPlayer(socket)
     }
     else{
-      // //console.log("reconnect old user")
       socket.realId = data.sessionId
-      //console.log(socket.realId)
-
       playerList[socket.realId].active = true
     }
     socket.join(socket.realId)
@@ -272,9 +271,20 @@ io.on('connection', function(socket){
 
   })
 
+  socket.on("createGame", function(gameId){
+    if (gameArray.includes(gameId)){
+      io.emit("error", "Room already exists")
+    }
+    else{
+      console.log("creating new room: " + gameId)
+      gameArray.push(gameId)
+      console.log(gameArray)
+      joinGame(socket, gameId)
+    }
+  })
 
-  socket.on("joinGame", function(){
-    joinGame(socket);
+  socket.on("joinGame", function(gameId){
+    joinGame(socket, gameId)
   });
 
   socket.on("setName", function(data){
@@ -425,13 +435,12 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(reason){
     //console.log(reason);
     if (playerArray.includes(socket.realId)){
-      // //console.log(socket.realId)
-      // //console.log(playerArray)
-      // //console.log(playerList)
-      // //console.log(socketList)
+      console.log("attemped removal")
       playerList[socket.realId].active = false
       setTimeout(function(){
         if (!playerList[socket.realId].active){
+          io.emit("addToChat", "<b> " + playerList[socket.realId].name + " has left the game <b>")
+
           delete socketList[socket.realId]
           delete playerList[socket.realId]
           playerArray.splice(playerArray.indexOf(socket.realId))

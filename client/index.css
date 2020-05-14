@@ -1,8 +1,7 @@
 .center-screen {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: left;
   align-items: center;
-  text-align: center;
   min-height: 100vh;
 }
