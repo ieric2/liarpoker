@@ -3,13 +3,15 @@ var app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 server.listen(process.env.PORT || 8080);
-server.setTimeout(5000);
+server.setTimeout(1000)
 
 app.get('/', function(req, res){
+  console.log("sending index")
   res.sendFile(__dirname + '/client/index.html');
 });
 
 app.get('/game/:roomId', function(req, res){
+  console.log("sending game")
   res.sendFile(__dirname + '/client/game.html');
 })
 app.use('/client', express.static(__dirname + '/client'));
@@ -45,9 +47,6 @@ class Player{
   }
   setName(name){
     this.name = name;
-  }
-  loseLife(){
-    this.lives--;
   }
 }
 
