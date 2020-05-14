@@ -3,6 +3,7 @@ var app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 server.listen(process.env.PORT || 8080);
+server.setTimeout(5000);
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/client/index.html');
@@ -47,9 +48,6 @@ class Player{
   }
   loseLife(){
     this.lives--;
-  }
-  dealCards(dealtCards){
-    this.cards = dealtCards;
   }
 }
 
