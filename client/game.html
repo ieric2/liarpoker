@@ -11,33 +11,28 @@
 
 
 <body>
-  <div id="gameScreen">
-    <!-- Add a player turn display -->
-    <!-- Add a turn history tracker -->
-    <text id="playerTurn">
-
-    </text>
-    <div class="container" style="display: flex;">
-      <canvas id="ctx"  style="width:33%;height:500px; border:2px solid #000000;"></canvas> 
-      <div style="width:33%; padding-left: 10px;">
-        <div id="chat" style="height:500px; overflow-y:scroll;">
-        </div>
-        </br>
+  <div class="flex-container" id="gameScreen" style="width:100%; height:100%; display:flex; flex-direction:row; align-items:flex-start;">
+    <div class="container" style="width:25%;height:100%">
+      <div style="height:30%">
         <text>
-          Chat Here:
+          Player Turn:
         </text>
-        <form id="chatForm">
-          <input id="chatInput" type="text" style="height:30px;width:95%">
-        </form>
+
+        <text id="playerTurn">
+        </text>
       </div>
-      <div id="moveHistory" style="width:33%;height:500px; overflow-y:scroll; padding-left: 10px;">
+  
+      <div id="moveHistory" style="height:70%; overflow-y:scroll; padding-left: 10px;">
       </div>
     </div>
-    <br>
-    <div class="container" style="display: flex;">
-      <div style="width:33%; vertical-align: top;">
+
+    <div class="container" style="width:50%;height:100%">
+      <canvas id="ctx"  style="height:70%; width:100%; border:2px solid #000000;">
+      </canvas> 
+
+      <div style="height:30%; width:100%">
         <form action="result.php" method="post" id="handSelection" style="display: none">
-          <select name="category" id="handTypeSelector" style="vertical-align: top;">
+          <select name="category" id="handTypeSelector">
             <option value="highCard">High Card</option>
             <option value="pair">Pair</option>
             <option value="twoPair">Two Pair</option> 
@@ -50,25 +45,42 @@
             <option value="royalFlush">Royal Flush</option>
           </select>
           <select name="choices[]" id="handSubtypeSelector" size="4" style="min-width: 100px;">
-              <!-- js populates -->
           </select>
+
           <select name="choices2[]" id="handSubtype2Selector" size="4" style="min-width: 100px;">
-            <!-- js populates -->
           </select>
           <p></p>
           <button type="button" onclick="playTurn()">Submit Hand</button>
           <button type="button" onclick="castDoubt()">Cast Doubt</button>
         </form>
         <br><br>
-        <!-- <form> -->
-          <!-- <input type="checkbox" value = "/> -->
-          <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
-        <!-- </form> -->
+        <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
       </div>
-      <text>
-        Player List:
-      </text>
-      <div id="playerList" style="width:33%;height:500px; overflow-y:scroll; padding-left: 10px;">
+    </div>
+
+    <div class="container" style="width:24%; height:100%; padding-left: 1%;">
+      <div style="height:85%">
+        <div id="chat" style="height:85%; overflow-y:scroll;">
+        </div>
+
+        </br>
+
+        <text>
+          Chat Here:
+        </text>
+
+        <form id="chatForm">
+          <input id="chatInput" type="text" style="height:7%;width:95%">
+        </form>
+      </div>
+
+      <div style="height:30%; width:100%">
+        <text>
+          Player List:
+        </text>
+
+        <div id="playerList" style="width: 100%; overflow-y:scroll;">
+        </div>
       </div>
     </div>
   </div>
@@ -97,6 +109,7 @@
     const canvas = document.getElementById("ctx")
     const ctx = canvas.getContext("2d");
     ctx.font = '30px Arial';
+    ctx.imageSmoothingEnabled = false;
 
     function startGame(){
       console.log("starting game");
@@ -117,6 +130,14 @@
       socket.emit("checkHand");
     }
 
+    // function displayCard(src, width, height, alt){
+    //   var img = new Image()
+    //   img.addEventListener('load', function(){
+    //     ctx.drawImage(img, 0, 0, img.width * 0.15, img.height * 0.15)
+    //   })
+    //   img.src = src;
+    // }
+
     socket.on('sessionAck', function(data){
       sessionStorage.setItem('sessionId', data.sessionId);
     })
@@ -136,12 +157,21 @@
         ctx.fillText("You LOST", 50, 50);
       }
       else{
-        ctx.fillText("Lives: " + data.lives, 110, 25);
+        // ctx.fillText("Lives: " + data.lives, 110, 25);
         cards = data.cards;
         
         for (var i = 0; i < cards.length; i++){
-          // src = 
-          ctx.fillText(cards[i], 10, 25 + i * 25);
+
+          // src = window.location.pathname.split("/")[2]
+          src = "../client/images/cards/"+"10C"+".svg"
+
+          var img = new Image()
+          img.addEventListener('load', function(){
+            ctx.drawImage(img, 0, 0)
+          })
+          img.src = src;
+          displayCard(src, 200, 200)
+          // ctx.fillText(cards[i], 10, 25 + i * 25);
         }
       }
     })
