@@ -62,20 +62,21 @@
       if (document.getElementById("setRoomField").value != "" && document.getElementById("setNameField").value != ""){
         console.log("joining")
         console.log(document.getElementById("setRoomField").value)
+        socket.emit("joinGame", {gameId: document.getElementById("setRoomField").value});
         setName()
-        socket.emit("joinGame", document.getElementById("setRoomField").value);
+
       }
     }
 
     function createGame(){
+      socket.emit("createGame", {gameId: document.getElementById("setRoomField").value});
       setName()
-      socket.emit("createGame", document.getElementById("setRoomField").value);
     }
     
 
 
     function setName(){
-      socket.emit('setName', document.getElementById("setNameField").value);
+      socket.emit('setName', {gameId: gameId, name: document.getElementById("setNameField").value});
     }
 
     function startGame(){
@@ -92,7 +93,7 @@
       window.location.href = destination;
     })
 
-    socket.on("error", function(message){
+    socket.on("invalid", function(message){
       document.getElementById("room-error-text").innerHTML=message
     })
 

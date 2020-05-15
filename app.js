@@ -3,7 +3,7 @@ var app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 server.listen(process.env.PORT || 8080);
-server.setTimeout(1000)
+server.setTimeout(2000)
 
 app.get('/', function(req, res){
   console.log("sending index")
@@ -17,24 +17,7 @@ app.get('/game/:roomId', function(req, res){
 app.use('/client', express.static(__dirname + '/client'));
 
 
-//console.log("Server started.");
-
-var MAX_LIVES = 5;
-
-var socketList = {};
-var playerList = {};
-
-var turnArray = [];
-var playerArray = [];
-var gameArray = [];
-var playerTurn = null;
-var freeCards = [ "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "10H", "JH", "QH", "KH", "AH",
-              "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "10D", "JD", "QD", "KD", "AD",
-              "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "10S", "JS", "QS", "KS", "AS",
-              "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "10C", "JC", "QC", "KC", "AC"];
-var usedCards = [];
-var gameStarted = [];
-var gameInProgress = false;
+console.log("Server started.");
 
 class Player{
   constructor(id){
@@ -51,41 +34,93 @@ class Player{
   }
 }
 
+class Game{
+  constructor(id){
+    this.gameId = id;
+    this.players = [];
+    this.numPlayers = 0
+    this.TurnArray = []
+    this.playerTurn = null
+    this.freeCards = [ "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "10H", "JH", "QH", "KH", "AH",
+              "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "10D", "JD", "QD", "KD", "AD",
+              "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "10S", "JS", "QS", "KS", "AS",
+              "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "10C", "JC", "QC", "KC", "AC"];
+    this.usedCards = [];
+    this.gameInProgress = false;
+  }
+  removePlayer(playerId){
+    const index = this.players.findIndex(playerId)
+    if (index > -1){
+      this.players.splice(index, 1)
+    }
+    this.numPlayers--
+    console.log("removed")
+  }
+  addPlayer(playerId){
+    this.players.push(playerId)
+    this.numPlayers++
+    console.log(playerId + " joined game: " + this.gameId)
+  }
+}
+
+var MAX_LIVES = 5;
+
+var socketList = {};
+var playerList = {};
+var gameList = {};
+
+
+var turnArray = [];
+var playerArray = [];
+var gameArray = [];
+
+
+
 function createPlayer(socket){
   playerList[socket.realId] = new Player(socket.realId);
   playerArray.push(socket.realId);
 }
 
-function drawCards(){
+function drawCards(gameId){
+  gameList[gameId].freeCards = gameList[gameId].freeCards.concat(gameList[gameId].usedCards)
+  gameList[gameId].usedCards = []
+  
   for (i in playerList){
     playerList[i].cards = [];
     for (var n = MAX_LIVES - playerList[i].lives + 1; n > 0; n--){
-      card = freeCards[Math.floor(Math.random() * freeCards.length)];
+      card = gameList[gameId].freeCards[Math.floor(Math.random() * gameList[gameId].freeCards.length)];
       playerList[i].cards.push(card);
-      freeCards.splice(freeCards.indexOf(card), 1);
-      usedCards.push(card);
+      const index = gameList[gameId].freeCards.indexOf(card)
+      if (index > -1){
+        gameList[gameId].freeCards.splice(index, 1)
+        gameList[gameId].usedCards.push(card)
+      }
     }
-    // //console.log(playerList[i].cards)
   }
 }
 
-function setupRound(){
+function setupRound(gameId){
   turnArray = [];
-  drawCards();
+  drawCards(gameId);
+  
+  if (gameList[gameId].playerTurn == null){
+    gameList[gameId].playerTurn = Math.floor(Math.random() * gameList[gameId].players.length);
+  }
+  console.log(gameList[gameId].playerTurn)
 
-  playerTurn = Math.floor(Math.random() * playerArray.length);
-  //console.log(Object.keys(socketList))
-  for(var i in playerList){
-    console.log(i)
-    io.to(socketList[i].realId).emit('newRound', {cards: playerList[i].cards, newPlayerTurn: playerList[playerArray[playerTurn]].name, lives: playerList[i].lives});
+
+  for(var i in gameList[gameId].players){
+    const playerId = gameList[gameId].players[i]
+    const playerTurn = gameList[gameId].playerTurn
+    io.to(playerId).emit('newRound', {cards: playerList[playerId].cards, newPlayerTurn: gameList[gameId].players[playerTurn], lives: playerList[playerId].lives});
   }
 }
 
 //---------- GAME LOGIC -----------//
 
-function checkHand(){
+function checkHand(gameId){
   hand = turnArray[turnArray.length - 1];
-  console.log(turnArray)
+  // console.log(turnArray)
   player = hand[0];
   handType = hand[1];
   handSubtype = hand[2];
@@ -96,14 +131,14 @@ function checkHand(){
   numCounts = {"2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0, "a": 0, "b": 0, "c": 0, "d": 0, "e": 0};
   suitCounts = {"H": 0, "D": 0, "C": 0, "S": 0};
 
-  for (var i = 0; i < usedCards.length; i++){
-    if (usedCards[i].length == 3){
-      num = convertCardValue(usedCards[i].substring(0, 2));
-      suit = usedCards[i].charAt(2);
+  for (var i = 0; i < gameList[gameId].usedCards.length; i++){
+    if (gameList[gameId].usedCards[i].length == 3){
+      num = convertCardValue(gameList[gameId].usedCards[i].substring(0, 2));
+      suit = gameList[gameId].usedCards[i].charAt(2);
     }
     else{
-      num = convertCardValue(usedCards[i].charAt(0));
-      suit = usedCards[i].charAt(1);
+      num = convertCardValue(gameList[gameId].usedCards[i].charAt(0));
+      suit = gameList[gameId].usedCards[i].charAt(1);
     }
 
     //console.log(num);
@@ -230,15 +265,35 @@ function convertCardValue(value){
 function joinGame(socket, gameId){
 
   if (gameArray.includes(gameId)){
-    console.log("joining room: " + gameId)
+    socket.join(gameId)
+    socket.gameId = gameId
+    gameList[gameId].addPlayer(socket.realId)
     url = "/game/" + gameId
+
+    // console.log(io.sockets.adapter.rooms[gameId])
+    // console.log(io.sockets.adapter.rooms[socket.realId])
+
+
     io.to(socket.realId).emit("redirect", url)
   
-    io.emit("addToChat", playerList[socket.realId].name + " has joined the game");
-    io.emit("updatePlayerList", playerList);
+    io.to(socket.gameId).emit("addToChat", playerList[socket.realId].name + " has joined the game");
+    io.to(socket.gameId).emit("updatePlayerList", playerList);
   }
   else{
-    io.emit("error", "Room does not exist")
+    socket.emit("invalid", "Room does not exist")
+  }
+}
+
+function createGame(socket, gameId){
+  if (gameArray.includes(gameId)){
+    socket.emit("invalid", "Room already exists")
+    return -1
+  }
+  else{
+    console.log("game created: " + gameId)
+    gameArray.push(gameId)
+    gameList[gameId] = new Game(gameId)
+    joinGame(socket, gameId)
   }
 }
 
@@ -256,72 +311,64 @@ io.on('connection', function(socket){
     else{
       socket.realId = data.sessionId
       playerList[socket.realId].active = true
-      socket.emit("resetState", {cards: playerList[socket.realId].cards, lives: playerList[socket.realId.lives], gameInProgress: gameInProgress})
+      socket.emit("resetState", {cards: playerList[socket.realId].cards, lives: playerList[socket.realId.lives], gameInProgress: gameList[data.gameId].gameInProgress})
     }
     socket.join(socket.realId)
     socket.emit("sessionAck", {sessionId: socket.realId})
-    io.emit("updatePlayerList", playerList);
 
   })
 
-  socket.on("roomEntered", function(gameId){
-    if(!gameArray.includes(gameId)){
-      console.log("Game created: " + gameId)
-      gameArray.push(gameId)
+  socket.on("roomEntered", function(data){
+    if (createGame(socket, data.gameId) == -1){
+      joinGame(socket, data.gameId)
     }
+    // if(!gameArray.includes(data.gameId)){
+      
+      // gameArray.push(data.gameId)
+      
+      // socket.join(data.gameId)
+      // io.to(data.gameId).emit("updatePlayerList", playerList);
+
+    // }
   })
 
-  socket.on("createGame", function(gameId){
-    if (gameArray.includes(gameId)){
-      io.emit("error", "Room already exists")
-    }
-    else{
-      console.log("creating new room: " + gameId)
-      gameArray.push(gameId)
-      console.log(gameArray)
-      joinGame(socket, gameId)
-    }
+  socket.on("createGame", function(data){
+    createGame(socket, data.gameId)
   })
 
-  socket.on("joinGame", function(gameId){
-    joinGame(socket, gameId)
+  socket.on("joinGame", function(data){
+    joinGame(socket, data.gameId)
   });
 
   socket.on("setName", function(data){
-    playerList[socket.realId].setName(data)
-    io.emit("updatePlayerList", playerList);
+    playerList[socket.realId].setName(data.name)
+    io.to(data.gameId).emit("updatePlayerList", playerList);
   });
 
-  socket.on('startGame', function(){
-    if (playerArray.length > 1){
-      gameInProgress = true;
-      // //console.log(playerList);
-      io.emit("displayPlayButtons");
-      io.emit("clearChat");
-      io.emit("updatePlayerList", playerList);
+  socket.on('startGame', function(data){
+    if (gameList[data.gameId].numPlayers > 1){
+      gameList[data.gameId].gameInProgress = true;
+      io.to(data.gameId).emit("displayPlayButtons");
+      io.to(data.gameId).emit("clearChat");
+      io.to(data.gameId).emit("updatePlayerList", playerList);
 
   
       for (i in playerList){
         playerList[i].lives = MAX_LIVES;
       }
   
-      setupRound();
+      setupRound(data.gameId);
     }
     else{
-      io.emit("addToChat", "<b> not enough people <b>")
+      io.to(data.gameId).emit("addToChat", "<b> not enough people <b>")
     }
 
 
   });
 
   socket.on('playTurn', function(data){
-    //console.log("turn playing")
-    //console.log(playerTurn);
+    if (socket.realId == playerArray[gameList[socket.gameId].playerTurn]){
 
-    //console.log("turn for: " + playerList[playerArray[playerTurn]].name);
-    if (socket.realId == playerArray[playerTurn]){
-      //console.log("turn played");
-      //console.log("hand: "+ data[0] + data[1] + data[2]);
       error = false;
       
       switch(data[0]){
@@ -388,11 +435,13 @@ io.on('connection', function(socket){
       if(!error && (turnArray.length == 0 || checkHandIncreases(data))){
         turnArray.push([playerList[socket.realId].name, data[0], data[1], data[2], message]);
   
-        io.emit("addToChat", '<i>' + message + '</i>');
+        io.to(data.gameId).emit("addToChat", '<i>' + message + '</i>');
+
+        var newTurn = ++gameList[socket.gameId].playerTurn % gameList[socket.gameId].players.length
     
-        playerTurn = ++playerTurn % playerArray.length;
+        gameList[socket.gameId].playerTurn = newTurn
     
-        io.emit("updateGame", {newPlayerTurn: playerList[playerArray[playerTurn]].name, pastMove: turnArray[turnArray.length - 1][4]})
+        io.to(data.gameId).emit("updateGame", {newPlayerTurn: gameList[socket.gameId].players[newTurn], pastMove: turnArray[turnArray.length - 1][4]})
       }
       else{
         socket.emit("addToChat", "<b> please select a higher hand <b>")
@@ -403,33 +452,34 @@ io.on('connection', function(socket){
     }
   });
 
-  socket.on('checkHand', function(){
+  socket.on('checkHand', function(data){
 
-    if (playerTurn == null){
+    if (gameList[data.gameId].playerTurn == null){
       socket.emit("addToChat", "<b> game has not started yet <b>")
     }
     else{
       //true if there is that hand
-      handValidity = checkHand(socket);
+      handValidity = checkHand(data.gameId);
       //console.log(handValidity);
       doubtValidity = "CORRECTLY";
       if (handValidity){
         doubtValidity = "INCORRECTLY";
         playerList[socket.realId].lives--;
+        //change turn to player who doubted
+        gameList[data.gameId].playerTurn = gameList[data.gameId].players.indexOf(socket.realId)
       }
       else{
-        playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
+        playerList[playerArray[(playerArray.length + gameList[data.gameId].playerTurn - 1) % playerArray.length]].lives--
+        //need to change turn to player who just played turn
+        gameList[data.gameId].playerTurn = (gameList[data.gameId].playerTurn + gameList[data.gameId].numPlayers - 1) % gameList[data.gameId].numPlayers 
       }
 
-      //console.log(turnArray)
-
-      io.emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnArray[turnArray.length - 1][0] + "'s hand </b>")
+      io.to(data.gameId).emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnArray[turnArray.length - 1][0] + "'s hand </b>")
       for (i in playerList){
-        io.emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
+        io.to(data.gameId).emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
       }
 
-
-      setupRound();
+      setupRound(data.gameId);
     }
 
 
@@ -437,25 +487,26 @@ io.on('connection', function(socket){
 
   socket.on('chat', function(data){
     // //console.log(playerList)
-    io.emit('addToChat', playerList[socket.realId].name + ": " + data);
+    io.to(data.gameId).emit('addToChat', playerList[socket.realId].name + ": " + data.text);
   })
 
 
-  socket.on('disconnect', function(reason){
-    //console.log(reason);
+  socket.on('disconnect', function(data){
     if (playerArray.includes(socket.realId)){
       console.log("attemped removal")
       playerList[socket.realId].active = false
       setTimeout(function(){
-        if (!playerList[socket.realId].active){
-          io.emit("addToChat", "<b> " + playerList[socket.realId].name + " has left the game <b>")
-
+        if (playerList[socket.realId] == undefined || !playerList[socket.realId].active){
+          // io.to(gameId).emit("addToChat", "<b> " + playerList[socket.realId].name + " has left the game <b>")
+          gameList[socket.gameId].removePlayer(socket.realId)
           delete socketList[socket.realId]
           delete playerList[socket.realId]
-          playerArray.splice(playerArray.indexOf(socket.realId))
-          io.emit("updatePlayerList", playerList);
 
-          console.log("removed")
+          const index = playerArray.indexOf(socket.realId)
+          if (index > -1){
+            playerArray.splice(index)
+          }
+          // io.to(gameId).emit("updatePlayerList", playerList);
         }
       }, 5000)
     }

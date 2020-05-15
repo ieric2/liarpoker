@@ -113,6 +113,7 @@
 
   <script>
     var cards = {}
+    var gameId = window.location.pathname.split("/")[2]
 
     const socket = io();
     const id = socket.id;
@@ -123,8 +124,8 @@
     } else {
         session_id = data//when we connect n times 
     }
-    socket.emit('startSession', {  sessionId: session_id })
-    socket.emit('roomEntered', window.location.pathname.split('/')[2])
+    socket.emit('startSession', {  sessionId: session_id, gameId: gameId })
+    socket.emit('roomEntered', {gameId: window.location.pathname.split('/')[2]})
 
     const handSelection = document.getElementById("handSelection")
     const chatForm = document.getElementById("chatForm");
@@ -154,20 +155,18 @@
 
     function startGame(){
       console.log("starting game");
-      socket.emit('test1');
-      socket.emit('test2');
-      socket.emit('startGame');
+      socket.emit('startGame', {gameId: gameId});
     }
 
     function playTurn(){
       var handType = document.getElementById("handTypeSelector").value;
       var handVariant = document.getElementById("handSubtypeSelector").value;
       var handVariant2 = document.getElementById("handSubtype2Selector").value;
-      socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2});
+      socket.emit("playTurn", {0: handType, 1: handVariant, 2: handVariant2, gameId: gameId});
     }
 
     function castDoubt(){
-      socket.emit("checkHand");
+      socket.emit("checkHand", {gameId: gameId});
     }
 
     function displayCard(src, index){
@@ -186,6 +185,7 @@
       cards = data.cards;
       for (var i = 0; i < cards.length; i++){
         src = "../client/images/cards/"+cards[i]+".svg"
+        console.log(src)
         displayCard(src, i)
       }
     })
@@ -209,6 +209,7 @@
         cards = data.cards;
         for (var i = 0; i < cards.length; i++){
           src = "../client/images/cards/"+cards[i]+".svg"
+          console.log(src)
           displayCard(src, i)
         }
       }
@@ -249,7 +250,7 @@
     chatForm.onsubmit = function(e){
       e.preventDefault();
       console.log(chatInput.value);
-      socket.emit('chat', chatInput.value);
+      socket.emit('chat', {text: chatInput.value, gameId: gameId});
       chatInput.value = "";
     }
 
@@ -424,13 +425,6 @@
 
     };
   </script>
-<!-- 
-  <script>
-    socket.on('ping', function(data){
-      socket.emit('pong', {beat: 1});
-    });
-  </script> -->
-
   
 </body>
 
