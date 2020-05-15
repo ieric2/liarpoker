@@ -1,3 +1,12 @@
+.moveHistory{
+  height:70%; 
+  overflow-y:scroll; 
+  padding-left: 10px;
+  background-color: lightblue;
+
+}
+
+
 .cardTable {
   position: relative;
   left: 0px;
@@ -5,41 +14,40 @@
   height:70%;
   width:100%;
   border:2px solid #000000;
+  background-color: #35654d;
 }
 
-
 .card0 {
-  left: 22.2%;
-  top: 12.5%;
+  left: 20%;
+  top: 25%;
   position: absolute;
-  align-items: center;
+  /* align-items: left; */
 }
 
 .card1 {
-  left: 44.4%;
-  top: 12.5%;
+  left: 42%;
+  top: 25%;
   position: absolute;
-  align-items: center;
+  /* align-items: left; */
 }
 
 .card2 {
-  left: 66.6%;
-  top: 12.5%;
+  left: 64%;
+  top: 25%;
   position: absolute;
-  align-items: center;
+  /* align-items: left; */
 }
 
 .card3 {
-  left: 33.3%;
+  left: 28%;
   top: 62.5%;
   position: absolute;
-  align-items: center;
+  /* align-items: left; */
 }
 
 .card4 {
-  left: 55.5%;
+  left: 55%;
   top: 62.5%;  
   position: absolute;
-
-  align-items: center;
+  /* align-items: left; */
 }

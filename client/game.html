@@ -2,6 +2,7 @@
 
 <head>
   <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <link rel="icon" href="/favicon.ico?v=1.1">
   <link rel="stylesheet" type="text/css" href="/client/game.css">
 
@@ -24,7 +25,7 @@
         </text>
       </div>
   
-      <div id="moveHistory" style="height:70%; overflow-y:scroll; padding-left: 10px;">
+      <div class="moveHistory" id="moveHistory">
       </div>
     </div>
 
@@ -48,7 +49,7 @@
       </container> 
 
       <div style="height:30%; width:100%">
-        <form action="result.php" method="post" id="handSelection">
+        <form action="result.php" method="post" id="handSelection" style="display:none">
           <select name="category" id="handTypeSelector">
             <option value="highCard">High Card</option>
             <option value="pair">Pair</option>
@@ -67,11 +68,10 @@
           <select name="choices2[]" id="handSubtype2Selector" size="4" style="min-width: 100px;">
           </select>
           <p></p>
-          <button type="button" onclick="playTurn()">Submit Hand</button>
-          <button type="button" onclick="castDoubt()">Cast Doubt</button>
+          <button class="btn btn-primary btn-lg" type="button" onclick="playTurn()">Submit Hand</button>
+          <button class="btn btn-primary btn-lg" type="button" onclick="castDoubt()">Cast Doubt</button>
         </form>
-        <br><br>
-        <input type="button" name="startGameButton" value= "Start Game" onclick="startGame()"/>
+        <button class="btn btn-primary btn-lg" type="button" name="startGameButton" onclick="startGame()">Start Game</button>
       </div>
     </div>
 
@@ -118,6 +118,7 @@
     socket.emit('startSession', {  sessionId: session_id })
     socket.emit('roomEntered', window.location.pathname.split('/')[2])
 
+    const handSelection = document.getElementById("handSelection")
     const chatForm = document.getElementById("chatForm");
     const chatInput = document.getElementById("chatInput");
     const playerTurn = document.getElementById("playerTurn");
@@ -131,6 +132,9 @@
     const card4 = document.getElementById("img4");
 
     var images = [card0, card1, card2, card3, card4]
+
+    var gameInProgress = false;
+    var lives = 5;
     
 
     function startGame(){
@@ -138,6 +142,8 @@
       socket.emit('test1');
       socket.emit('test2');
       socket.emit('startGame');
+      gameInProgress = true;
+      handSelection.style.display = "block"
     }
 
     function playTurn(){
@@ -159,6 +165,18 @@
       sessionStorage.setItem('sessionId', data.sessionId);
     })
 
+    socket.on("resetState", function(data){
+      gameInProgress = data.gameInProgress;
+      if (gameInProgress){
+        handSelection.style.display = "block"
+      }
+      cards = data.cards;
+      for (var i = 0; i < cards.length; i++){
+        src = "../client/images/cards/"+cards[i]+".svg"
+        displayCard(src, i)
+      }
+    })
+
 
     socket.on("newRound", function(data){
       console.log("new round");
@@ -167,7 +185,7 @@
       playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
 
       if (data.lives == 0){
-        document.getElementById("handSelection").style.display = "none";
+        handSelection.style.display = "none";
         // ctx.fillText("You LOST", 50, 50);
       }
       else{

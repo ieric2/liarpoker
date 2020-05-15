@@ -34,6 +34,7 @@ var freeCards = [ "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "10H", "JH", "
               "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "10C", "JC", "QC", "KC", "AC"];
 var usedCards = [];
 var gameStarted = [];
+var gameInProgress = false;
 
 class Player{
   constructor(id){
@@ -255,6 +256,7 @@ io.on('connection', function(socket){
     else{
       socket.realId = data.sessionId
       playerList[socket.realId].active = true
+      socket.emit("resetState", {cards: playerList[socket.realId].cards, lives: playerList[socket.realId.lives], gameInProgress: gameInProgress})
     }
     socket.join(socket.realId)
     socket.emit("sessionAck", {sessionId: socket.realId})
@@ -395,31 +397,43 @@ io.on('connection', function(socket){
       else{
         socket.emit("addToChat", "<b> please select a higher hand <b>")
       }
-    }  
+    }
+    else{
+      socket.emit("addToChat", "<b> gmae has not started yet <b>")
+    }
   });
 
   socket.on('checkHand', function(){
-    //true if there is that hand
-    handValidity = checkHand(socket);
-    //console.log(handValidity);
-    doubtValidity = "CORRECTLY";
-    if (handValidity){
-      doubtValidity = "INCORRECTLY";
-      playerList[socket.realId].lives--;
+
+    if (playerTurn == null){
+      socket.emit("addToChat", "<b> game has not started yet <b>")
+    }
+    else if (socket.realId != playerArray[playerTurn]){
+      //true if there is that hand
+      handValidity = checkHand(socket);
+      //console.log(handValidity);
+      doubtValidity = "CORRECTLY";
+      if (handValidity){
+        doubtValidity = "INCORRECTLY";
+        playerList[socket.realId].lives--;
+      }
+      else{
+        playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
+      }
+
+      //console.log(turnArray)
+
+      io.emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnArray[turnArray.length - 1][0] + "'s hand </b>")
+      for (i in playerList){
+        io.emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
+      }
+
+
+      setupRound();
     }
     else{
-      playerList[playerArray[(playerArray.length + playerTurn - 1) % playerArray.length]].lives--
+      socket.emit("addToChat", "<b> can't doubt on own turn <b>")
     }
-
-    //console.log(turnArray)
-
-    io.emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnArray[turnArray.length - 1][0] + "'s hand </b>")
-    for (i in playerList){
-      io.emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
-    }
-
-
-    setupRound();
 
 
   });
