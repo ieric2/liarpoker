@@ -408,7 +408,7 @@ io.on('connection', function(socket){
     if (playerTurn == null){
       socket.emit("addToChat", "<b> game has not started yet <b>")
     }
-    else if (socket.realId != playerArray[playerTurn]){
+    else{
       //true if there is that hand
       handValidity = checkHand(socket);
       //console.log(handValidity);
@@ -430,9 +430,6 @@ io.on('connection', function(socket){
 
 
       setupRound();
-    }
-    else{
-      socket.emit("addToChat", "<b> can't doubt on own turn <b>")
     }
 
 
