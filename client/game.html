@@ -31,6 +31,14 @@
 
     <div class="container" style="width:50%;height:100%; display:flex; flex-direction:column;">
       <container class="cardTable" id="cardTable">
+        <div class="lives">
+          <img id="heart0" src="../client/images/cards/filled_heart.svg" style="width:16%; height:auto">
+          <img id="heart1" src="../client/images/cards/filled_heart.svg" style="width:16%; height:auto">
+          <img id="heart2" src="../client/images/cards/filled_heart.svg" style="width:16%; height:auto">
+          <img id="heart3" src="../client/images/cards/filled_heart.svg" style="width:16%; height:auto">
+          <img id="heart4" src="../client/images/cards/filled_heart.svg" style="width:16%; height:auto">
+
+        </div>
         <div class="card0" id="card0">
           <img id = "img0" src="../client/images/cards/card_back.svg" style="width:50%; height:auto">
         </div>
@@ -131,7 +139,14 @@
     const card3 = document.getElementById("img3");
     const card4 = document.getElementById("img4");
 
+    const heart0 = document.getElementById("heart0");
+    const heart1 = document.getElementById("heart1");
+    const heart2 = document.getElementById("heart2");
+    const heart3 = document.getElementById("heart3");
+    const heart4 = document.getElementById("heart4");
+
     var images = [card0, card1, card2, card3, card4]
+    var hearts = [heart0, heart1, heart2, heart3, heart4]
 
     var gameInProgress = false;
     var lives = 5;
@@ -190,6 +205,9 @@
       }
       else{
         // ctx.fillText("Lives: " + data.lives, 110, 25);
+        for (i = 5; i > data.lives; i--){
+          hearts[i - 1].src = "../client/images/cards/empty_heart.svg"
+        }
         cards = data.cards;
         for (var i = 0; i < cards.length; i++){
           src = "../client/images/cards/"+cards[i]+".svg"
@@ -218,7 +236,14 @@
     socket.on("updatePlayerList", function(playerList){
       playerListTag.innerHTML = "";
       for (i in playerList){
-        playerListTag.innerHTML += '<div>' + playerList[i].name + '</div>';
+        console.log(playerList[i].name)
+        console.log(socket.id)
+        if (playerList[i].name == "Player" + socket.id){
+          playerListTag.innerHTML += '<b> ' + playerList[i].name + '</b>';
+        }
+        else{
+          playerListTag.innerHTML += '<div>' + playerList[i].name + '</div>';
+        }
       }
     })
 

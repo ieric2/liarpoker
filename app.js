@@ -399,7 +399,7 @@ io.on('connection', function(socket){
       }
     }
     else{
-      socket.emit("addToChat", "<b> gmae has not started yet <b>")
+      socket.emit("addToChat", "<b> not your turn <b>")
     }
   });
 
