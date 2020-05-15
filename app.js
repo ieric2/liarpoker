@@ -168,7 +168,7 @@ function checkHand(){
   }
 }
 
-function checkhandIncreases(data){
+function checkHandIncreases(data){
   prevHand = turnArray[turnArray.length - 1];
   prevHandType = prevHand[1];
   prevHandSubtype = prevHand[2];

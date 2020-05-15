@@ -157,8 +157,6 @@
       socket.emit('test1');
       socket.emit('test2');
       socket.emit('startGame');
-      gameInProgress = true;
-      handSelection.style.display = "block"
     }
 
     function playTurn(){
@@ -230,7 +228,8 @@
     })
 
     socket.on("displayPlayButtons", function(){
-      document.getElementById("handSelection").style.display = "block";
+      gameInProgress = true;
+      handSelection.style.display = "block"
     })
 
     socket.on("updatePlayerList", function(playerList){
