@@ -302,6 +302,9 @@ function createGame(socket, gameId){
 
 
 io.on('connection', function(socket){
+  socket.on('nonexistant', function(){
+    console.log("testing");
+  })
   socket.on('startSession', function(data){
 
     if (data.sessionId == null || !playerArray.includes(data.sessionId)){
