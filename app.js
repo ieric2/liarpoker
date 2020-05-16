@@ -39,7 +39,7 @@ class Game{
     this.gameId = id;
     this.players = [];
     this.numPlayers = 0
-    this.TurnArray = []
+    this.turnArray = []
     this.playerTurn = null
     this.freeCards = [ "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "10H", "JH", "QH", "KH", "AH",
               "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "10D", "JD", "QD", "KD", "AD",
@@ -49,7 +49,9 @@ class Game{
     this.gameInProgress = false;
   }
   removePlayer(playerId){
-    const index = this.players.findIndex(playerId)
+    // console.log(this.players)
+    // console.log(playerId)
+    const index = this.players.indexOf(playerId)
     if (index > -1){
       this.players.splice(index, 1)
     }
@@ -70,7 +72,6 @@ var playerList = {};
 var gameList = {};
 
 
-var turnArray = [];
 var playerArray = [];
 var gameArray = [];
 
@@ -100,7 +101,7 @@ function drawCards(gameId){
 }
 
 function setupRound(gameId){
-  turnArray = [];
+  gameList[gameId].turnArray = [];
   drawCards(gameId);
   
   if (gameList[gameId].playerTurn == null){
@@ -119,8 +120,7 @@ function setupRound(gameId){
 //---------- GAME LOGIC -----------//
 
 function checkHand(gameId){
-  hand = turnArray[turnArray.length - 1];
-  // console.log(turnArray)
+  hand = gameList[gameId].turnArray.pop()
   player = hand[0];
   handType = hand[1];
   handSubtype = hand[2];
@@ -204,7 +204,7 @@ function checkHand(gameId){
 }
 
 function checkHandIncreases(data){
-  prevHand = turnArray[turnArray.length - 1];
+  prevHand = gameList[data.gameId].turnArray[gameList[data.gameId].turnArray.length - 1];
   prevHandType = prevHand[1];
   prevHandSubtype = prevHand[2];
   prevHandSubtype2 = prevHand[3];
@@ -267,7 +267,9 @@ function joinGame(socket, gameId){
   if (gameArray.includes(gameId)){
     socket.join(gameId)
     socket.gameId = gameId
-    gameList[gameId].addPlayer(socket.realId)
+    if (gameList[gameId].players.indexOf(socket.realId) == -1){
+      gameList[gameId].addPlayer(socket.realId)
+    }
     url = "/game/" + gameId
 
     // console.log(io.sockets.adapter.rooms[gameId])
@@ -277,7 +279,7 @@ function joinGame(socket, gameId){
     io.to(socket.realId).emit("redirect", url)
   
     io.to(socket.gameId).emit("addToChat", playerList[socket.realId].name + " has joined the game");
-    io.to(socket.gameId).emit("updatePlayerList", playerList);
+    io.to(socket.gameId).emit("updatePlayerArray", gameList[gameId].players);
   }
   else{
     socket.emit("invalid", "Room does not exist")
@@ -311,7 +313,9 @@ io.on('connection', function(socket){
     else{
       socket.realId = data.sessionId
       playerList[socket.realId].active = true
-      socket.emit("resetState", {cards: playerList[socket.realId].cards, lives: playerList[socket.realId.lives], gameInProgress: gameList[data.gameId].gameInProgress})
+      if (gameArray.includes(data.gameId)){
+        socket.emit("resetState", {cards: playerList[socket.realId].cards, lives: playerList[socket.realId.lives], gameInProgress: gameList[data.gameId].gameInProgress})
+      }
     }
     socket.join(socket.realId)
     socket.emit("sessionAck", {sessionId: socket.realId})
@@ -322,14 +326,6 @@ io.on('connection', function(socket){
     if (createGame(socket, data.gameId) == -1){
       joinGame(socket, data.gameId)
     }
-    // if(!gameArray.includes(data.gameId)){
-      
-      // gameArray.push(data.gameId)
-      
-      // socket.join(data.gameId)
-      // io.to(data.gameId).emit("updatePlayerList", playerList);
-
-    // }
   })
 
   socket.on("createGame", function(data){
@@ -342,7 +338,7 @@ io.on('connection', function(socket){
 
   socket.on("setName", function(data){
     playerList[socket.realId].setName(data.name)
-    io.to(data.gameId).emit("updatePlayerList", playerList);
+    io.to(data.gameId).emit("updatePlayerArray", gameList[data.gameId].players);
   });
 
   socket.on('startGame', function(data){
@@ -350,7 +346,7 @@ io.on('connection', function(socket){
       gameList[data.gameId].gameInProgress = true;
       io.to(data.gameId).emit("displayPlayButtons");
       io.to(data.gameId).emit("clearChat");
-      io.to(data.gameId).emit("updatePlayerList", playerList);
+      io.to(data.gameId).emit("updatePlayerArray", gameList[data.gameId].players);
 
   
       for (i in playerList){
@@ -432,16 +428,16 @@ io.on('connection', function(socket){
           break;
         }
 
-      if(!error && (turnArray.length == 0 || checkHandIncreases(data))){
-        turnArray.push([playerList[socket.realId].name, data[0], data[1], data[2], message]);
+      if(!error && (gameList[socket.gameId].turnArray.length == 0 || checkHandIncreases(data))){
+        gameList[socket.gameId].turnArray.push([playerList[socket.realId].name, data[0], data[1], data[2], message]);
   
-        io.to(data.gameId).emit("addToChat", '<i>' + message + '</i>');
+        // io.to(data.gameId).emit("addToChat", '<i>' + message + '</i>');
 
         var newTurn = ++gameList[socket.gameId].playerTurn % gameList[socket.gameId].players.length
     
         gameList[socket.gameId].playerTurn = newTurn
     
-        io.to(data.gameId).emit("updateGame", {newPlayerTurn: gameList[socket.gameId].players[newTurn], pastMove: turnArray[turnArray.length - 1][4]})
+        io.to(data.gameId).emit("updateGame", {newPlayerTurn: gameList[socket.gameId].players[newTurn], pastMove: gameList[socket.gameId].turnArray[gameList[socket.gameId].turnArray.length - 1][4]})
       }
       else{
         socket.emit("addToChat", "<b> please select a higher hand <b>")
@@ -474,7 +470,7 @@ io.on('connection', function(socket){
         gameList[data.gameId].playerTurn = (gameList[data.gameId].playerTurn + gameList[data.gameId].numPlayers - 1) % gameList[data.gameId].numPlayers 
       }
 
-      io.to(data.gameId).emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + turnArray[turnArray.length - 1][0] + "'s hand </b>")
+      io.to(data.gameId).emit('addToChat', "<b> " + playerList[socket.realId].name + " " + doubtValidity + " doubted " + gameList[data.gameId].turnArray[gameList[data.gameId].turnArray.length - 1][0] + "'s hand </b>")
       for (i in playerList){
         io.to(data.gameId).emit('addToChat',playerList[i].name + " had: " + playerList[i].cards);
       }
@@ -497,7 +493,7 @@ io.on('connection', function(socket){
       playerList[socket.realId].active = false
       setTimeout(function(){
         if (playerList[socket.realId] == undefined || !playerList[socket.realId].active){
-          // io.to(gameId).emit("addToChat", "<b> " + playerList[socket.realId].name + " has left the game <b>")
+          io.to(socket.gameId).emit("addToChat", "<b> " + playerList[socket.realId].name + " has left the game <b>")
           gameList[socket.gameId].removePlayer(socket.realId)
           delete socketList[socket.realId]
           delete playerList[socket.realId]
@@ -506,7 +502,7 @@ io.on('connection', function(socket){
           if (index > -1){
             playerArray.splice(index)
           }
-          // io.to(gameId).emit("updatePlayerList", playerList);
+          io.to(socket.gameId).emit("updatePlayerArray", gameList[socket.gameId].players);
         }
       }, 5000)
     }

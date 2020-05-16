@@ -104,7 +104,7 @@
           Player List:
         </text>
 
-        <div id="playerList" style="width: 100%; overflow-y:scroll;">
+        <div id="playerArray" style="width: 100%; overflow-y:scroll;">
         </div>
       </div>
     </div>
@@ -132,7 +132,7 @@
     const chatInput = document.getElementById("chatInput");
     const playerTurn = document.getElementById("playerTurn");
     const moveHistory = document.getElementById("moveHistory");
-    const playerListTag = document.getElementById("playerList");
+    const playerArrayTag = document.getElementById("playerArray");
     const cardTable = document.getElementById("cardTable");
     const card0 = document.getElementById("img0");
     const card1 = document.getElementById("img1");
@@ -233,16 +233,16 @@
       handSelection.style.display = "block"
     })
 
-    socket.on("updatePlayerList", function(playerList){
-      playerListTag.innerHTML = "";
-      for (i in playerList){
-        console.log(playerList[i].name)
-        console.log(socket.id)
-        if (playerList[i].name == "Player" + socket.id){
-          playerListTag.innerHTML += '<b> ' + playerList[i].name + '</b>';
+    socket.on("updatePlayerArray", function(playerArray){
+      playerArrayTag.innerHTML = "";
+      for (i in playerArray){
+        console.log(playerArray[i])
+        // console.log(socket.id)
+        if (playerArray[i] == socket.id){
+          playerArrayTag.innerHTML += '<b> ' + playerArray[i] + '</b>';
         }
         else{
-          playerListTag.innerHTML += '<div>' + playerList[i].name + '</div>';
+          playerArrayTag.innerHTML += '<div>' + playerArray[i] + '</div>';
         }
       }
     })
