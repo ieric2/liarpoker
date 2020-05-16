@@ -306,12 +306,15 @@ io.on('connection', function(socket){
     console.log("testing");
   })
   socket.on('startSession', function(data){
+    console.log("starting session")
 
     if (data.sessionId == null || !playerArray.includes(data.sessionId)){
       socket.realId = socket.id;
       socketList[socket.id] = socket;
 
       createPlayer(socket)
+      console.log("new session")
+
     }
     else{
       socket.realId = data.sessionId
@@ -319,6 +322,8 @@ io.on('connection', function(socket){
       if (gameArray.includes(data.gameId)){
         socket.emit("resetState", {cards: playerList[socket.realId].cards, lives: playerList[socket.realId.lives], gameInProgress: gameList[data.gameId].gameInProgress})
       }
+      console.log("old session")
+
     }
     socket.join(socket.realId)
     socket.emit("sessionAck", {sessionId: socket.realId})
@@ -326,25 +331,30 @@ io.on('connection', function(socket){
   })
 
   socket.on("roomEntered", function(data){
+    console.log("room entered")
     if (createGame(socket, data.gameId) == -1){
       joinGame(socket, data.gameId)
     }
   })
 
   socket.on("createGame", function(data){
+    console.log("create game")
     createGame(socket, data.gameId)
   })
 
   socket.on("joinGame", function(data){
+    console.log("join game")
     joinGame(socket, data.gameId)
   });
 
   socket.on("setName", function(data){
+    console.log("setting name")
     playerList[socket.realId].setName(data.name)
     io.to(data.gameId).emit("updatePlayerArray", gameList[data.gameId].players);
   });
 
   socket.on('startGame', function(data){
+    console.log("starting game")
     if (gameList[data.gameId].numPlayers > 1){
       gameList[data.gameId].gameInProgress = true;
       io.to(data.gameId).emit("displayPlayButtons");
