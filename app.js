@@ -302,9 +302,7 @@ function createGame(socket, gameId){
 
 
 io.on('connection', function(socket){
-  socket.on('nonexistant', function(){
-    console.log("testing");
-  })
+
   socket.on('startSession', function(data){
     console.log("starting session")
 
@@ -508,6 +506,13 @@ io.on('connection', function(socket){
         if (playerList[socket.realId] == undefined || !playerList[socket.realId].active){
           io.to(socket.gameId).emit("addToChat", "<b> " + playerList[socket.realId].name + " has left the game <b>")
           gameList[socket.gameId].removePlayer(socket.realId)
+          if (gameList[socket.gameId].numPlayers == 0){
+            delete gameList[socket.gameId]
+            const index = gameArray.indexOf(socket.gameId)
+            if (index > -1){
+              gameArray.splice(index)
+            }
+          }
           delete socketList[socket.realId]
           delete playerList[socket.realId]
 
