@@ -76,7 +76,8 @@
 
 
     function setName(){
-      socket.emit('setName', {gameId: gameId, name: document.getElementById("setNameField").value});
+      console.log("settingName")
+      socket.emit('setName', {gameId: document.getElementById("setRoomField").value, name: document.getElementById("setNameField").value});
     }
 
     function startGame(){
