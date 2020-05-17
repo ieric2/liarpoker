@@ -113,7 +113,7 @@ function setupRound(gameId){
   for(var i in gameList[gameId].players){
     const playerId = gameList[gameId].players[i]
     const playerTurn = gameList[gameId].playerTurn
-    io.to(playerId).emit('newRound', {cards: playerList[playerId].cards, newPlayerTurn: gameList[gameId].players[playerTurn], lives: playerList[playerId].lives});
+    io.to(playerId).emit('newRound', {cards: playerList[playerId].cards, newPlayerTurn: playerList[gameList[gameId].players[playerTurn]].name, lives: playerList[playerId].lives});
   }
 }
 
@@ -448,7 +448,7 @@ io.on('connection', function(socket){
     
         gameList[socket.gameId].playerTurn = newTurn
     
-        io.to(data.gameId).emit("updateGame", {newPlayerTurn: gameList[socket.gameId].players[newTurn], pastMove: gameList[socket.gameId].turnArray[gameList[socket.gameId].turnArray.length - 1][4]})
+        io.to(data.gameId).emit("updateGame", {newPlayerTurn: playerList[gameList[socket.gameId].players[newTurn]].name, pastMove: gameList[socket.gameId].turnArray[gameList[socket.gameId].turnArray.length - 1][4]})
       }
       else{
         socket.emit("addToChat", "<b> please select a higher hand <b>")
@@ -520,7 +520,9 @@ io.on('connection', function(socket){
           if (index > -1){
             playerArray.splice(index)
           }
-          io.to(socket.gameId).emit("updatePlayerArray", gameList[socket.gameId].players);
+          if (gameList[socket.gameId] != undefined){
+            io.to(socket.gameId).emit("updatePlayerArray", gameList[socket.gameId].players);
+          }
         }
       }, 5000)
     }
