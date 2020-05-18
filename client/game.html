@@ -19,14 +19,14 @@
   </div>
   <div class="flex-container" id="gameScreen" style="width:100%; height:90%; display:flex; flex-direction:row; flex-wrap:nowrap; align-items:flex-start;">
     <div class="container" style="width:25%;height:100%;">
-      <div style="height:10%">
+      <!-- <div style="height:10%">
         <text>
           Player Turn:
         </text>
         <text id="playerTurn">
         </text>
-      </div>
-      <div style="height:10%; width:100%">
+      </div> -->
+      <div style="height:20%; width:100%">
         <text>
           Players In Game:
         </text>
@@ -114,7 +114,7 @@
     var gameId = window.location.pathname.split("/")[2]
 
     const socket = io();
-    const id = socket.id;
+    // var id = socket.id;
     var session_id;
     let data = sessionStorage.getItem('sessionId');
     if (data == null) {
@@ -130,7 +130,7 @@
 
     const chatForm = document.getElementById("chatForm");
     const chatInput = document.getElementById("chatInput");
-    const playerTurn = document.getElementById("playerTurn");
+    // const playerTurn = document.getElementById("playerTurn");
     const moveHistory = document.getElementById("moveHistory");
     const playerArrayTag = document.getElementById("playerArray");
     const cardTable = document.getElementById("cardTable");
@@ -175,6 +175,7 @@
 
     socket.on('sessionAck', function(data){
       sessionStorage.setItem('sessionId', data.sessionId);
+      id = data.sessionId
     })
 
     socket.on("resetState", function(data){
@@ -203,7 +204,7 @@
 
       console.log(data.newPlayerTurn)
 
-      playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
+      // playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
 
       if (data.lives == 0){
         handSelection.style.display = "none";
@@ -232,7 +233,7 @@
     });
 
     socket.on("updateGame", function(data){
-      playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
+      // playerTurn.innerHTML = "<div>" + data.newPlayerTurn + "'s Turn </div>";
       moveHistory.innerHTML +=  '<div>' + data.pastMove + '</div>';
     })
 
@@ -242,16 +243,22 @@
       startGameButton.style.display = "none"
     })
 
-    socket.on("updatePlayerArray", function(playerArray){
+    socket.on("updatePlayerArray", function(data){
       playerArrayTag.innerHTML = "";
-      for (i in playerArray){
-        console.log(playerArray[i])
-        // console.log(socket.id)
-        if (playerArray[i] == socket.id){
-          playerArrayTag.innerHTML += '<b> ' + playerArray[i] + '</b>';
+      console.log("player turn: " + data.playerTurn)
+      console.log(session_id)
+      for (i in data.playerNames){
+        if (i == data.playerTurn){
+          console.log("setting player turn")
+          data.playerNames[i] = '<b>' + data.playerNames[i] + '</b>';
+        }
+        if (data.playerIds[i] == session_id){
+          console.log("setting me: " + data.playerNames[i])
+          playerArrayTag.innerHTML += '<div>' + data.playerNames[i] + '<b> [ME] </b>' + '</div>';
         }
         else{
-          playerArrayTag.innerHTML += '<div>' + playerArray[i] + '</div>';
+          console.log("setting other person: " + data.playerNames[i])
+          playerArrayTag.innerHTML += '<div>' + data.playerNames[i] + '</div>';
         }
       }
     })
