@@ -3,7 +3,7 @@ var app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 server.listen(process.env.PORT || 8080);
-server.setTimeout(2000)
+server.setTimeout(500)
 
 app.get('/', function(req, res){
   console.log("sending index")
