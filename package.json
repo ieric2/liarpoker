@@ -1,29 +1,30 @@
 {
-  "name": "liarpoker",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
-  "dependencies": {
-    "bootstrap": "^4.5.0",
-    "express": "^4.17.1",
-    "socket.io": "^2.3.0"
-  },
-  "engines": {
-    "node": "11.0.x"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ieric2/liarpoker.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ieric2/liarpoker/issues"
-  },
-  "homepage": "https://github.com/ieric2/liarpoker#readme"
+    "name": "liarpoker",
+    "version": "1.0.1",
+    "description": "",
+    "main": "app.js",
+    "dependencies": {
+        "bootstrap": "^4.5.0",
+        "express": "^4.17.1",
+        "mocha": "^8.1.3",
+        "socket.io": "^2.3.0"
+    },
+    "engines": {
+        "node": "11.0.x"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "start": "node app.js",
+        "test": "mocha"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ieric2/liarpoker.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/ieric2/liarpoker/issues"
+    },
+    "homepage": "https://github.com/ieric2/liarpoker#readme"
 }
